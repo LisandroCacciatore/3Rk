@@ -1,0 +1,2872 @@
+/* ═══════════════════════════════════════════════════════════════
+   ESCARAMUZA — beta de interfaz gráfica
+   JRPG táctico feudal + tablero de mesa digitalizado.
+   El motor manda: esta capa solo presenta su estado.
+   ═══════════════════════════════════════════════════════════════ */
+
+:root {
+  --bg-0: #15110b;
+  --bg-1: #1e1710;
+  --bg-2: #271e13;
+  --bg-3: #33281a;
+  --madera1: #3a2d1e;
+  --madera2: #221a0f;
+  --oro: #c9a24f;
+  --oro-b: #e8c97a;
+  --cobre: #a9713f;
+  --linea: #54432a;
+  --linea-suave: #3a2f1e;
+  --texto: #ead9b8;
+  --texto-2: #b39f80;
+  --texto-3: #8a7658;
+  --fuego: #e94560;
+  --agua: #3498db;
+  --exito: #6fbf7a;
+  --alerta: #ff6b6b;
+  --font-titulo: Georgia, 'Times New Roman', serif;
+  --font-ui: 'Segoe UI', system-ui, sans-serif;
+  /* Escala fluida: ratio adimensional clamp(0.75, min(100vw/1440px, 100dvh/810px), 1.25) */
+  --escala: clamp(0.75, min(calc(100vw / 1440px), calc(100dvh / 810px)), 1.25);
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: var(--font-ui);
+  color: var(--texto);
+  min-height: 100vh;
+  background:
+    radial-gradient(ellipse at 50% -10%, #3a2c1c 0%, transparent 55%),
+    linear-gradient(180deg, #1b150e 0%, #121009 100%);
+}
+
+#root {
+  min-height: 100vh;
+}
+
+.app {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  height: 100dvh;
+  position: relative;
+  /* PASO 1/2 — pergamino full-bleed: es el fondo de TODA la pantalla de partida,
+     no solo del cajón del tablero. No existe tablero.png; gradiente de respaldo. */
+  background:
+    radial-gradient(ellipse at 50% 35%, #7a5c36 0%, #5a4126 55%, #2e2112 100%),
+    repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.02) 0 calc(var(--escala) * 1px), transparent calc(var(--escala) * 1px) calc(var(--escala) * 7px));
+  overflow: hidden;
+}
+
+button {
+  font-family: var(--font-ui);
+  color: var(--texto);
+  background: linear-gradient(180deg, var(--bg-3), var(--bg-1));
+  border: 1px solid var(--linea);
+  border-radius: 5px;
+  padding: calc(var(--escala) * 5px) calc(var(--escala) * 11px);
+  cursor: pointer;
+  transition: border-color 0.15s ease, background-color 0.15s ease, transform 0.12s ease, box-shadow 0.15s ease;
+}
+
+button:hover:not(:disabled) {
+  border-color: var(--oro);
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.btn-disabled {
+  opacity: 0.55;
+}
+
+.panel-titulo {
+  font-family: var(--font-titulo);
+  font-size: calc(var(--escala) * 13px);
+  letter-spacing: calc(var(--escala) * 1.5px);
+  color: var(--oro);
+  text-transform: uppercase;
+}
+
+.placeholder {
+  color: var(--texto-3);
+  font-size: calc(var(--escala) * 13px);
+}
+
+.acc-seccion {
+  color: var(--texto-3);
+  font-size: calc(var(--escala) * 11px);
+}
+
+.acc-coste {
+  color: var(--oro-b);
+  font-size: calc(var(--escala) * 11px);
+  font-weight: 600;
+}
+
+.acc-motivo {
+  color: var(--texto-3);
+  font-size: calc(var(--escala) * 11px);
+}
+
+.motivo {
+  color: #ffb06b;
+}
+
+/* ═══ Portada ══════════════════════════════════════════════════ */
+
+.portada {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: calc(var(--escala) * 34px);
+  padding: calc(var(--escala) * 40px) calc(var(--escala) * 20px);
+  text-align: center;
+  background:
+    radial-gradient(ellipse at 50% 0%, #45331d 0%, transparent 60%),
+    linear-gradient(180deg, #1e1710, #121009);
+}
+
+.portada-titulo h1 {
+  font-family: var(--font-titulo);
+  font-size: calc(var(--escala) * 64px);
+  letter-spacing: calc(var(--escala) * 10px);
+  color: var(--oro-b);
+  text-shadow: 0 0 calc(var(--escala) * 24px) rgba(201, 162, 79, 0.35), 0 calc(var(--escala) * 4px) calc(var(--escala) * 12px) rgba(0, 0, 0, 0.6);
+  margin: calc(var(--escala) * 8px) 0 calc(var(--escala) * 6px);
+}
+
+.portada-kicker {
+  font-size: calc(var(--escala) * 12px);
+  letter-spacing: calc(var(--escala) * 3px);
+  text-transform: uppercase;
+  color: var(--texto-3);
+}
+
+.portada-sub {
+  color: var(--texto-2);
+  font-size: calc(var(--escala) * 14px);
+}
+
+.portada-banderas {
+  display: flex;
+  align-items: stretch;
+  gap: calc(var(--escala) * 22px);
+}
+
+.banda-bloque {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: calc(var(--escala) * 8px);
+  min-width: calc(var(--escala) * 220px);
+  padding: calc(var(--escala) * 22px) calc(var(--escala) * 26px);
+  border-radius: calc(var(--escala) * 10px);
+  border: 1px solid var(--linea);
+  background: linear-gradient(180deg, var(--bg-2), var(--bg-1));
+  box-shadow: inset 0 calc(var(--escala) * 1px) 0 rgba(255, 255, 255, 0.04), 0 calc(var(--escala) * 10px) calc(var(--escala) * 30px) rgba(0, 0, 0, 0.4);
+  position: relative;
+}
+
+.banda-bloque::before,
+.banda-bloque::after {
+  content: '';
+  position: absolute;
+  width: calc(var(--escala) * 18px);
+  height: calc(var(--escala) * 18px);
+  border: calc(var(--escala) * 2px) solid var(--oro);
+}
+.banda-bloque::before { top: -1px; left: -1px; border-right: 0; border-bottom: 0; }
+.banda-bloque::after { bottom: -1px; right: -1px; border-left: 0; border-top: 0; }
+
+.banda-bloque.fuego { border-top: calc(var(--escala) * 3px) solid var(--fuego); }
+.banda-bloque.agua { border-top: calc(var(--escala) * 3px) solid var(--agua); }
+
+.banda-nombre {
+  font-family: var(--font-titulo);
+  font-size: calc(var(--escala) * 26px);
+  letter-spacing: calc(var(--escala) * 4px);
+  color: var(--texto);
+}
+
+.banda-especie {
+  font-size: calc(var(--escala) * 12px);
+  color: var(--texto-2);
+}
+
+.banda-lema {
+  font-size: calc(var(--escala) * 11px);
+  color: var(--texto-3);
+}
+
+.portada-vs {
+  align-self: center;
+  font-family: var(--font-titulo);
+  font-size: calc(var(--escala) * 30px);
+  color: var(--oro);
+  text-shadow: 0 0 calc(var(--escala) * 14px) rgba(201, 162, 79, 0.5);
+}
+
+.portada-controls {
+  display: flex;
+  align-items: center;
+  gap: calc(var(--escala) * 12px);
+}
+
+.btn-comenzar {
+  padding: calc(var(--escala) * 12px) calc(var(--escala) * 26px);
+  font-size: calc(var(--escala) * 16px);
+  letter-spacing: calc(var(--escala) * 1px);
+  font-family: var(--font-titulo);
+  color: #2a2015;
+  background: linear-gradient(180deg, var(--oro-b), var(--oro));
+  border-color: #8a6d2b;
+  animation: pulso-comenzar 2.6s ease-in-out infinite;
+}
+
+.btn-comenzar:hover {
+  transform: translateY(calc(var(--escala) * -1px));
+  box-shadow: 0 calc(var(--escala) * 6px) calc(var(--escala) * 18px) rgba(201, 162, 79, 0.35);
+  animation-play-state: paused;
+}
+
+@keyframes pulso-comenzar {
+  0%, 100% {
+    box-shadow: 0 0 calc(var(--escala) * 4px) rgba(201, 162, 79, 0.25);
+  }
+  50% {
+    box-shadow: 0 0 calc(var(--escala) * 18px) rgba(201, 162, 79, 0.55);
+  }
+}
+
+.portada-pie {
+  font-size: calc(var(--escala) * 12px);
+  color: var(--texto-3);
+}
+
+.portada-mapa {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: calc(var(--escala) * 10px);
+  padding: calc(var(--escala) * 14px) calc(var(--escala) * 16px);
+  border-radius: calc(var(--escala) * 12px);
+  border: calc(var(--escala) * 1px) solid rgba(201, 162, 79, 0.5);
+  background: linear-gradient(180deg, var(--bg-2), var(--bg-1));
+  box-shadow:
+    inset 0 calc(var(--escala) * 1px) 0 rgba(255, 255, 255, 0.04),
+    0 calc(var(--escala) * 4px) calc(var(--escala) * 14px) rgba(201, 162, 79, 0.15),
+    0 calc(var(--escala) * 10px) calc(var(--escala) * 30px) rgba(0, 0, 0, 0.4);
+  max-width: calc(var(--escala) * 540px);
+}
+
+.mapa-preview {
+  display: block;
+  border-radius: calc(var(--escala) * 6px);
+  background: #0e1a10;
+}
+
+.portada-mapa-caption {
+  font-size: calc(var(--escala) * 12px);
+  color: var(--texto-2);
+  line-height: 1.4;
+  margin: 0;
+}
+
+/* ═══ Portada · selector por tarjetas (estilo JRPG táctico) ═══════ */
+
+.portada-selector {
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--escala) * 10px);
+  min-width: calc(var(--escala) * 230px);
+  flex: 1;
+}
+
+.portada-selector-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: calc(var(--escala) * 8px);
+}
+
+.portada-label-jugador {
+  font-size: calc(var(--escala) * 12px);
+  letter-spacing: calc(var(--escala) * 1.5px);
+  text-transform: uppercase;
+  color: var(--oro-b);
+  font-weight: bold;
+}
+
+.portada-bot-toggle {
+  display: flex;
+  align-items: center;
+  gap: calc(var(--escala) * 4px);
+  font-size: calc(var(--escala) * 11px);
+  color: var(--texto-2);
+  cursor: pointer;
+  user-select: none;
+}
+
+.portada-placa {
+  display: flex;
+  align-items: center;
+  gap: calc(var(--escala) * 12px);
+  padding: calc(var(--escala) * 12px) calc(var(--escala) * 14px);
+  border-radius: calc(var(--escala) * 10px);
+  border: calc(var(--escala) * 1px) solid var(--linea);
+  background: linear-gradient(180deg, var(--bg-2), var(--bg-1));
+  box-shadow:
+    inset 0 calc(var(--escala) * 1px) 0 rgba(255, 255, 255, 0.04),
+    0 0 calc(var(--escala) * 14px) color-mix(in srgb, var(--color-fac) 45%, transparent),
+    0 calc(var(--escala) * 8px) calc(var(--escala) * 20px) rgba(0, 0, 0, 0.4);
+  position: relative;
+}
+
+.portada-placa::before,
+.portada-placa::after {
+  content: '';
+  position: absolute;
+  width: calc(var(--escala) * 14px);
+  height: calc(var(--escala) * 14px);
+  border: calc(var(--escala) * 2px) solid var(--oro);
+}
+.portada-placa::before { top: calc(var(--escala) * -1px); left: calc(var(--escala) * -1px); border-right: 0; border-bottom: 0; }
+.portada-placa::after { bottom: calc(var(--escala) * -1px); right: calc(var(--escala) * -1px); border-left: 0; border-top: 0; }
+
+.portada-placa-avatar {
+  flex: 0 0 auto;
+  width: calc(var(--escala) * 52px);
+  height: calc(var(--escala) * 52px);
+  border-radius: calc(var(--escala) * 6px);
+  border: calc(var(--escala) * 1px) solid rgba(201, 162, 79, 0.6);
+  background: var(--bg-0);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.portada-placa-sprite,
+.portada-placa-crest {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  image-rendering: pixelated;
+}
+
+.portada-placa-info {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: calc(var(--escala) * 2px);
+  min-width: 0;
+}
+
+.portada-placa-info .banda-nombre {
+  font-size: calc(var(--escala) * 20px);
+  letter-spacing: calc(var(--escala) * 3px);
+  margin: 0;
+}
+
+.portada-card-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: calc(var(--escala) * 6px);
+}
+
+.portada-card {
+  display: flex;
+  align-items: center;
+  gap: calc(var(--escala) * 8px);
+  padding: calc(var(--escala) * 6px) calc(var(--escala) * 8px);
+  border-radius: calc(var(--escala) * 8px);
+  border: calc(var(--escala) * 1px) solid var(--linea);
+  background: linear-gradient(180deg, var(--bg-2), var(--bg-1));
+  cursor: pointer;
+  text-align: left;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+}
+
+.portada-card:hover {
+  transform: translateY(calc(var(--escala) * -2px));
+  border-color: var(--color-fac);
+}
+
+.portada-card.selected {
+  border-color: var(--color-fac);
+  box-shadow: 0 0 calc(var(--escala) * 10px) color-mix(in srgb, var(--color-fac) 55%, transparent);
+}
+
+.portada-card-avatar {
+  flex: 0 0 auto;
+  width: calc(var(--escala) * 32px);
+  height: calc(var(--escala) * 32px);
+  border-radius: calc(var(--escala) * 4px);
+  overflow: hidden;
+  background: var(--bg-0);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.portada-card-sprite,
+.portada-card-crest {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  image-rendering: pixelated;
+}
+
+.portada-card-nombre {
+  font-size: calc(var(--escala) * 12px);
+  color: var(--texto);
+  letter-spacing: calc(var(--escala) * 1px);
+}
+
+/* ═══ HUD mínimo flotante ═══════════════════════════════════════ */
+
+/* PASO 6 — sin barra superior: badge de ronda/turno arriba-izquierda y los
+   controles esenciales (Fin de turno, Ajustes) flotando arriba-derecha.
+   Translúcidos, ventana sobre el mundo, sin robar el tablero. */
+
+.hud-flotante {
+  position: absolute;
+  top: calc(var(--escala) * 10px);
+  left: calc(var(--escala) * 14px);
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: calc(var(--escala) * 2px);
+  padding: calc(var(--escala) * 5px) calc(var(--escala) * 12px);
+  border: calc(var(--escala) * 1px) solid rgba(201, 162, 79, 0.35);
+  border-radius: calc(var(--escala) * 8px);
+  background: linear-gradient(180deg, rgba(51, 40, 26, 0.55) 0%, rgba(30, 23, 16, 0.62) 100%);
+  backdrop-filter: blur(6px);
+  box-shadow: 0 calc(var(--escala) * 6px) calc(var(--escala) * 16px) rgba(0, 0, 0, 0.35);
+  pointer-events: none;
+  text-align: center;
+}
+
+.hud-ronda-flotante {
+  font-family: var(--font-titulo);
+  font-size: calc(var(--escala) * 14px);
+  letter-spacing: calc(var(--escala) * 2px);
+  color: var(--oro-b);
+}
+
+.hud-turno-flotante {
+  font-size: calc(var(--escala) * 12px);
+  letter-spacing: calc(var(--escala) * 1px);
+  color: var(--texto-2);
+}
+
+.hud-turno-flotante.A { color: var(--fuego); }
+.hud-turno-flotante.B { color: var(--agua); }
+
+.hud-estandartes-flotante {
+  display: block;
+  margin-top: calc(var(--escala) * 4px);
+  font-family: var(--font-titulo);
+  font-size: calc(var(--escala) * 11px);
+  letter-spacing: calc(var(--escala) * 1px);
+  color: var(--texto-2);
+}
+
+.hud-semilla {
+  font-size: calc(var(--escala) * 11px);
+  color: var(--texto-3);
+}
+
+.hud-acciones-flotantes {
+  position: absolute;
+  top: calc(var(--escala) * 10px);
+  right: calc(var(--escala) * 14px);
+  z-index: 40;
+  display: flex;
+  gap: calc(var(--escala) * 8px);
+}
+
+/* PASO 6 — ⚙ abre el modal de ajustes de playtest, sin barra. */
+.btn-ajustes {
+  font-size: calc(var(--escala) * 17px);
+  line-height: 1;
+  padding: calc(var(--escala) * 8px) calc(var(--escala) * 13px);
+  border-radius: calc(var(--escala) * 7px);
+  background: linear-gradient(180deg, rgba(51, 40, 26, 0.85), rgba(30, 23, 16, 0.9));
+}
+
+/* Reencuadre de la cámara (M3g): vuelve al encuadre completo del tablero. */
+.btn-reencuadrar {
+  font-size: calc(var(--escala) * 15px);
+  line-height: 1;
+  padding: calc(var(--escala) * 8px) calc(var(--escala) * 11px);
+  border-radius: calc(var(--escala) * 7px);
+  background: linear-gradient(180deg, rgba(51, 40, 26, 0.85), rgba(30, 23, 16, 0.9));
+}
+
+.btn-sec {
+  font-size: calc(var(--escala) * 12px);
+}
+
+.btn-file {
+  position: relative;
+  cursor: pointer;
+}
+
+.btn-file input[type="file"] {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.seed-input {
+  background: var(--bg-0);
+  border: calc(var(--escala) * 1px) solid var(--linea);
+  color: var(--texto);
+  border-radius: calc(var(--escala) * 4px);
+  padding: calc(var(--escala) * 4px) calc(var(--escala) * 8px);
+  width: calc(var(--escala) * 132px);
+}
+
+.btn-nueva {
+  background: linear-gradient(180deg, #7a2a38, #5a1e2a);
+  border-color: #a84a58;
+  font-size: calc(var(--escala) * 12px);
+}
+
+.btn-nueva:hover {
+  border-color: var(--fuego);
+}
+
+/* ═══ PASO 4 — Modal de ajustes de playtest ════════════════════ */
+
+.dev-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 75;
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-end;
+  padding: calc(var(--escala) * 58px) calc(var(--escala) * 16px) 0 0;
+  background: rgba(8, 6, 3, 0.38);
+  animation: modal-fade 0.2s ease-out;
+}
+
+.dev-modal {
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--escala) * 10px);
+  padding: calc(var(--escala) * 14px) calc(var(--escala) * 16px);
+  border-radius: calc(var(--escala) * 10px);
+  border: calc(var(--escala) * 1px) solid var(--linea);
+  border-top: calc(var(--escala) * 3px) solid var(--oro);
+  background: linear-gradient(180deg, var(--bg-3), var(--bg-1));
+  box-shadow: 0 calc(var(--escala) * 18px) calc(var(--escala) * 44px) rgba(0, 0, 0, 0.65);
+  animation: modal-in 0.22s ease-out;
+}
+
+.dev-modal-cab {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: calc(var(--escala) * 12px);
+}
+
+.dev-modal-cuerpo {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: calc(var(--escala) * 8px);
+  align-items: center;
+}
+
+.dev-modal-cerrar {
+  padding: calc(var(--escala) * 3px) calc(var(--escala) * 10px);
+  border-radius: 50%;
+  background: linear-gradient(180deg, #5a2a35, #3e1c24);
+  border-color: #8a4a58;
+}
+
+@keyframes modal-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes modal-in {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ═══ Banners ══════════════════════════════════════════════════ */
+
+.banner-turno {
+  display: flex;
+  align-items: center;
+  gap: calc(var(--escala) * 10px);
+  align-self: center;
+  width: max-content;
+  max-width: 92%;
+  margin: calc(var(--escala) * 4px) auto 0;
+  padding: calc(var(--escala) * 3px) calc(var(--escala) * 16px);
+  border-radius: 20px;
+  border: calc(var(--escala) * 1px) solid rgba(201, 162, 79, 0.28);
+  background: rgba(21, 17, 11, 0.55);
+  backdrop-filter: blur(5px);
+  box-shadow: 0 calc(var(--escala) * 4px) calc(var(--escala) * 12px) rgba(0, 0, 0, 0.35);
+  font-size: calc(var(--escala) * 13px);
+  z-index: 35;
+}
+
+.turno-letra {
+  font-weight: 700;
+  padding: calc(var(--escala) * 2px) calc(var(--escala) * 10px);
+  border-radius: calc(var(--escala) * 3px);
+  border: calc(var(--escala) * 1px) solid var(--linea);
+}
+
+.banner-turno.A .turno-letra { background: rgba(233, 69, 96, 0.18); color: #ff8fa3; }
+.banner-turno.B .turno-letra { background: rgba(52, 152, 219, 0.18); color: #7ab8ff; }
+
+.turno-hint {
+  color: var(--texto-2);
+  transition: opacity 0.2s ease;
+}
+
+.banner-evento {
+  align-self: center;
+  width: max-content;
+  max-width: 80%;
+  margin: calc(var(--escala) * 3px) auto 0;
+  padding: calc(var(--escala) * 3px) calc(var(--escala) * 16px);
+  border-radius: 20px;
+  border: calc(var(--escala) * 1px) solid var(--linea-suave);
+  background: rgba(21, 17, 11, 0.5);
+  backdrop-filter: blur(5px);
+  font-size: calc(var(--escala) * 12px);
+  color: var(--texto-2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  z-index: 35;
+  /* PASO 4 — cada evento entra deslizándose (key en el JSX reinicia la animación). */
+  animation: banner-slide 0.35s ease-out both;
+}
+
+@keyframes banner-slide {
+  from { opacity: 0; transform: translateY(-6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ═══ Cartel de cambio de turno (UI, no regla) ════════════════════════
+   Aviso efímero y no bloqueante que anuncia el paso de turno. El overlay
+   deja pasar los clics (pointer-events: none); solo la tarjeta recibe
+   clic para cerrarla antes. Se cierra solo desde App (~1,8 s). */
+.cartel-turno-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  z-index: 60;
+}
+
+.cartel-turno {
+  pointer-events: auto;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: calc(var(--escala) * 8px);
+  padding: calc(var(--escala) * 18px) calc(var(--escala) * 30px);
+  border-radius: calc(var(--escala) * 16px);
+  border: calc(var(--escala) * 1px) solid rgba(201, 162, 79, 0.35);
+  background: rgba(18, 14, 9, 0.85);
+  backdrop-filter: blur(6px);
+  box-shadow: 0 calc(var(--escala) * 10px) calc(var(--escala) * 30px) rgba(0, 0, 0, 0.5);
+  animation: cartel-in 0.28s ease-out both;
+}
+
+.cartel-turno-titulo {
+  font-size: calc(var(--escala) * 15px);
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  color: #d8c9a3;
+}
+
+.cartel-turno-cambio {
+  display: flex;
+  align-items: center;
+  gap: calc(var(--escala) * 12px);
+  font-size: calc(var(--escala) * 17px);
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.cartel-faccion.A { color: #ff8fa3; }
+.cartel-faccion.B { color: #7ab8ff; }
+
+.cartel-flecha {
+  color: #d8c9a3;
+  font-size: calc(var(--escala) * 20px);
+}
+
+@keyframes cartel-in {
+  from { opacity: 0; transform: translateY(10px) scale(0.96); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* Handoff de pantalla compartida (mano a mano, UI no regla): overlay opaco que
+   bloquea el tablero y la mano hasta que el nuevo jugador toca "Comenzar mi
+   turno". Es fixed y full-viewport para que el rival no vea nada, e intercepta
+   todos los clics (pointer-events: auto). No se cierra con clic fuera. */
+.handoff-overlay {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 80;
+  background: radial-gradient(ellipse at center, rgba(22, 17, 11, 0.97), rgba(8, 6, 4, 0.99));
+  pointer-events: auto;
+}
+
+.handoff-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: calc(var(--escala) * 14px);
+  padding: calc(var(--escala) * 26px) calc(var(--escala) * 44px);
+  border-radius: calc(var(--escala) * 18px);
+  border: calc(var(--escala) * 1px) solid rgba(201, 162, 79, 0.4);
+  background: rgba(18, 14, 9, 0.92);
+  box-shadow: 0 calc(var(--escala) * 12px) calc(var(--escala) * 36px) rgba(0, 0, 0, 0.6);
+  animation: cartel-in 0.28s ease-out both;
+  text-align: center;
+  max-width: min(92vw, calc(var(--escala) * 480px));
+}
+
+.handoff-entrega {
+  font-size: calc(var(--escala) * 16px);
+  color: #d8c9a3;
+  line-height: 1.4;
+}
+
+.handoff-entrega strong {
+  color: #fff;
+}
+
+.handoff-btn {
+  margin-top: calc(var(--escala) * 4px);
+  font-size: calc(var(--escala) * 15px);
+  padding: calc(var(--escala) * 8px) calc(var(--escala) * 18px);
+}
+
+
+.banner-evento strong {
+  color: #9fb8ff;
+}
+
+.banner-ganador {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: calc(var(--escala) * 16px);
+  padding: calc(var(--escala) * 14px) calc(var(--escala) * 20px);
+  border-radius: calc(var(--escala) * 12px);
+  border: calc(var(--escala) * 2px) solid var(--exito);
+  background: linear-gradient(90deg, rgba(45, 61, 30, 0.94), rgba(35, 48, 26, 0.94));
+  box-shadow: 0 calc(var(--escala) * 20px) calc(var(--escala) * 60px) rgba(0, 0, 0, 0.7);
+  font-size: calc(var(--escala) * 15px);
+  font-family: var(--font-titulo);
+  letter-spacing: calc(var(--escala) * 1px);
+  z-index: 60;
+  /* PASO 4 — el ganador se revela con fade + escala centrado. */
+  animation: banner-ganador-in 0.5s ease-out both;
+}
+
+@keyframes banner-ganador-in {
+  from { opacity: 0; transform: translate(-50%, -42%) scale(0.92); }
+  to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+}
+
+/* ═══ Área principal ═══════════════════════════════════════════ */
+
+.app-main {
+  /* Franja superior (TopHUD + banners) en flujo; el tablero empieza debajo.
+     PASO 5 — pantalla completa: sin laterales ni cajón. La ficha de unidad
+     (abajo izquierda) y la mano en abanico (abajo centro) flotan encima. */
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  z-index: 0;
+}
+
+.zone {
+  background: linear-gradient(180deg, var(--bg-2), var(--bg-1));
+  border: calc(var(--escala) * 1px) solid var(--linea);
+  border-radius: calc(var(--escala) * 8px);
+  margin: calc(var(--escala) * 6px);
+  padding: calc(var(--escala) * 8px);
+  box-shadow: inset 0 calc(var(--escala) * 1px) 0 rgba(255, 255, 255, 0.03), 0 calc(var(--escala) * 6px) calc(var(--escala) * 18px) rgba(0, 0, 0, 0.3);
+}
+
+.tablero {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+  /* PASO 1 — sin marco ni caja: el pergamino full-bleed lo pone .app-main. */
+  margin: 0;
+  padding: 0;
+  background: none;
+  border: none;
+  box-shadow: none;
+}
+
+/* Mapa estilo Fire Emblem GBA: el MUNDO ocupa toda la pantalla (capa .app-main
+   absolute); la isla de hexágonos jugables es la parte central de ese mundo. Sin
+   cajón, sin marco, sin sombra de "tablero físico" (UI-04). */
+.board-container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+.board-container svg {
+  display: block;
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  /* Cámara móvil (M3g): touch-action none habilita pan por puntero sin scroll
+     accidental; el cursor insinúa que el mapa se puede arrastrar. Durante un
+     drag con botón derecho/medio cambia a grabbing (clase .arrastrando). */
+  touch-action: none;
+  cursor: grab;
+}
+
+.board-container.arrastrando svg {
+  cursor: grabbing;
+}
+
+/* ═══ PASO 5 — Ficha de unidad y abanico de cartas, flotantes ═══════ */
+
+/* Piso plano detrás del tablero: el mapa descansa sobre una losa oscura cuando
+   el mundo está oculto (presentación) y en el modo esquemático de playtest. */
+.fondo-tablero {
+  fill: #20281d;
+}
+
+.terreno-letra {
+  font-family: var(--font-titulo);
+  font-weight: 800;
+  letter-spacing: 0.5px;
+}
+
+/* Ficha de unidad flotante: esquina inferior-izquierda sobre el mapa. Aparece
+   al seleccionar o hacer hover en una unidad propia. No se superpone al abanico
+   de cartas (abajo-centro). */
+.unit-card-flotante {
+  position: absolute;
+  left: calc(var(--escala) * 14px);
+  bottom: calc(var(--escala) * 14px);
+  z-index: 30;
+  width: calc(var(--escala) * 300px);
+  max-width: calc(100vw - var(--escala) * 28px);
+  max-height: 58vh;
+  overflow-x: hidden;
+  overflow-y: auto;
+  padding: calc(var(--escala) * 9px);
+  background: linear-gradient(180deg, rgba(39, 30, 19, 0.86), rgba(21, 17, 11, 0.9));
+  border: calc(var(--escala) * 1px) solid rgba(201, 162, 79, 0.3);
+  border-top: calc(var(--escala) * 3px) solid var(--color-banda, var(--oro));
+  border-radius: calc(var(--escala) * 10px);
+  box-shadow: 0 calc(var(--escala) * 14px) calc(var(--escala) * 34px) rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(8px);
+}
+
+/* Dentro del panel flotante la ficha no repite su propio cajón. */
+.unit-card-flotante .unit-sheet {
+  background: none;
+  border: none;
+  box-shadow: none;
+  padding: 0;
+  margin-bottom: calc(var(--escala) * 6px);
+}
+
+.unit-card-flotante .unit-sheet::before,
+.unit-card-flotante .unit-sheet::after {
+  display: none;
+}
+
+.unit-card-flotante .action-menu {
+  min-width: 0;
+}
+
+/* PASO 4 — botón ✕ de la ficha: esquina superior derecha del panel flotante. */
+.btn-cerrar-ficha {
+  position: absolute;
+  top: calc(var(--escala) * 5px);
+  right: calc(var(--escala) * 5px);
+  z-index: 2;
+  width: calc(var(--escala) * 24px);
+  height: calc(var(--escala) * 24px);
+  padding: 0;
+  line-height: 1;
+  font-size: calc(var(--escala) * 13px);
+  border-radius: 50%;
+  background: linear-gradient(180deg, #5a2a35, #3e1c24);
+  border-color: #8a4a58;
+  box-shadow: 0 calc(var(--escala) * 2px) calc(var(--escala) * 5px) rgba(0, 0, 0, 0.4);
+}
+
+.unit-card-pie {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: calc(var(--escala) * 6px);
+  padding-top: calc(var(--escala) * 5px);
+  border-top: calc(var(--escala) * 1px) solid var(--linea-suave);
+}
+
+.btn-log-toggle {
+  font-size: calc(var(--escala) * 11.5px);
+  padding: calc(var(--escala) * 4px) calc(var(--escala) * 10px);
+  color: var(--texto-2);
+}
+
+.btn-log-toggle.abierto {
+  color: var(--oro-b);
+  border-color: var(--oro);
+}
+
+.unit-card-flotante .log-panel {
+  flex: none;
+  height: auto;
+  max-height: calc(var(--escala) * 150px);
+  margin-top: calc(var(--escala) * 8px);
+}
+
+/* ═══ Abanico de cartas (inferior-centro) ════════════════════════
+   PASO 5 — la mano vive abajo al centro, superpuesta al borde del tablero
+   como un abanico. El hover eleva y escala la carta activa; el click la fija
+   para jugarla. Pura presentación; reglas en el motor. */
+
+.mano-abanico {
+  position: absolute;
+  left: 50%;
+  bottom: calc(var(--escala) * 8px);
+  transform: translateX(-50%);
+  z-index: 24;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: calc(var(--escala) * 4px);
+  max-width: 90vw;
+  pointer-events: none;
+}
+
+/* La cabecera (PO + avisos) y las cartas recuperan la interacción. */
+.mano-abanico-cab,
+.mano-abanico .mano-fan,
+.mano-abanico .carta-abanico-preview {
+  pointer-events: auto;
+}
+
+.mano-abanico-cab {
+  display: flex;
+  align-items: center;
+  gap: calc(var(--escala) * 10px);
+  padding: calc(var(--escala) * 4px) calc(var(--escala) * 12px);
+  border-radius: calc(var(--escala) * 8px);
+  background: linear-gradient(180deg, rgba(30, 23, 16, 0.82), rgba(18, 14, 9, 0.88));
+  border: calc(var(--escala) * 1px) solid rgba(201, 162, 79, 0.28);
+  box-shadow: 0 calc(var(--escala) * 6px) calc(var(--escala) * 18px) rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(6px);
+  pointer-events: auto;
+}
+
+.mano-fan {
+  display: flex;
+  align-items: flex-end;
+}
+
+.carta-fan {
+  position: relative;
+  flex: 0 0 auto;
+  width: calc(var(--escala) * 92px);
+  height: calc(var(--escala) * 124px);
+  margin: 0 calc(var(--escala) * -22px);
+  padding: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  cursor: pointer;
+  background: linear-gradient(180deg, rgba(64, 50, 30, 0.95), rgba(26, 20, 13, 0.96));
+  border: calc(var(--escala) * 1px) solid var(--color-elem, var(--oro));
+  border-top: calc(var(--escala) * 4px) solid var(--color-elem, var(--oro));
+  border-radius: calc(var(--escala) * 8px);
+  box-shadow:
+    inset 0 calc(var(--escala) * 1px) 0 rgba(255, 255, 255, 0.06),
+    inset 0 calc(var(--escala) * -10px) calc(var(--escala) * 16px) rgba(0, 0, 0, 0.35),
+    0 calc(var(--escala) * 5px) calc(var(--escala) * 14px) rgba(0, 0, 0, 0.55);
+  transform-origin: 50% 100%;
+  transform: rotate(var(--rot, 0deg));
+  transition:
+    transform 0.18s cubic-bezier(0.25, 1, 0.5, 1),
+    box-shadow 0.18s ease,
+    border-top-width 0.18s ease,
+    opacity 0.18s ease;
+}
+
+.carta-fan:hover:not(:disabled),
+.carta-fan.elevada:not(:disabled) {
+  transform: rotate(var(--rot, 0deg)) translateY(calc(var(--escala) * -42px)) scale(1.18);
+  z-index: 30;
+  box-shadow:
+    inset 0 calc(var(--escala) * 1px) 0 rgba(255, 255, 255, 0.08),
+    inset 0 calc(var(--escala) * -10px) calc(var(--escala) * 16px) rgba(0, 0, 0, 0.26),
+    0 calc(var(--escala) * 16px) calc(var(--escala) * 32px) rgba(0, 0, 0, 0.68),
+    0 0 calc(var(--escala) * 22px) var(--glow, rgba(201, 162, 79, 0.5));
+  border-top-width: calc(var(--escala) * 5px);
+}
+
+.carta-fan.seleccionada {
+  border-top-color: var(--oro-b);
+}
+
+.carta-fan.carta-deshabilitada {
+  opacity: 0.4;
+  cursor: default;
+  filter: saturate(0.4);
+}
+
+.carta-fan-arte {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background: radial-gradient(circle at 50% 45%, var(--color-elem, #544), 65%, rgba(0, 0, 0, 0.45));
+}
+
+.carta-fan-arte .carta-img,
+.carta-fan-arte .carta-cresta {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.carta-fan-arte .carta-img {
+  image-rendering: pixelated;
+}
+
+.carta-fan-simbolo {
+  position: absolute;
+  bottom: calc(var(--escala) * 5px);
+  left: calc(var(--escala) * 7px);
+  font-size: calc(var(--escala) * 24px);
+  line-height: 1;
+  filter: drop-shadow(0 calc(var(--escala) * 1px) calc(var(--escala) * 2px) rgba(0, 0, 0, 0.6));
+}
+
+.carta-fan-valor {
+  position: absolute;
+  top: calc(var(--escala) * 6px);
+  right: calc(var(--escala) * 6px);
+  font-size: calc(var(--escala) * 15px);
+  font-weight: 800;
+  line-height: 1;
+  color: #241a0e;
+  background: linear-gradient(180deg, var(--oro-b), var(--oro));
+  border: calc(var(--escala) * 1px) solid #8a6d2b;
+  border-radius: calc(var(--escala) * 5px);
+  min-width: calc(var(--escala) * 23px);
+  text-align: center;
+  padding: calc(var(--escala) * 3px) calc(var(--escala) * 1px);
+  box-shadow:
+    0 calc(var(--escala) * 2px) calc(var(--escala) * 4px) rgba(0, 0, 0, 0.55),
+    inset 0 calc(var(--escala) * 1px) 0 rgba(255, 255, 255, 0.35);
+  text-shadow: 0 calc(var(--escala) * 1px) 0 rgba(0, 0, 0, 0.18);
+}
+
+/* Detalle expandido de la carta activa: carta vertical 2:3 con la anatomía en
+   5 zonas (cabecera, arte, franja de iconos, texto, pie) que flota encima del
+   abanico. Pura presentación; leer datos de carta.habilidad / carta.tipo. */
+.carta-abanico-preview {
+  position: absolute;
+  left: 50%;
+  bottom: calc(var(--escala) * 172px);
+  transform: translateX(-50%);
+  width: calc(var(--escala) * 170px);
+  z-index: 40;
+  padding: calc(var(--escala) * 8px);
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--escala) * 6px);
+  background: linear-gradient(180deg, rgba(39, 30, 19, 0.96), rgba(21, 17, 11, 0.98));
+  border: calc(var(--escala) * 2px) solid var(--color-elem, var(--oro));
+  border-top: calc(var(--escala) * 5px) solid var(--color-elem, var(--oro));
+  border-radius: calc(var(--escala) * 9px);
+  box-shadow: 0 calc(var(--escala) * 12px) calc(var(--escala) * 30px) rgba(0, 0, 0, 0.65);
+  font-size: calc(var(--escala) * 11.5px);
+  backdrop-filter: blur(8px);
+}
+
+/* I. Cabecera: nombre + badge de valor. */
+.carta-detalle-cab {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: calc(var(--escala) * 6px);
+}
+
+.carta-detalle-pobadge {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: calc(var(--escala) * 1px);
+  flex-shrink: 0;
+}
+
+.carta-detalle-povalor {
+  font-size: calc(var(--escala) * 16px);
+  font-weight: 800;
+  line-height: 1;
+  color: #241a0e;
+  background: linear-gradient(180deg, var(--oro-b), var(--oro));
+  border: calc(var(--escala) * 1px) solid #8a6d2b;
+  border-radius: calc(var(--escala) * 5px);
+  min-width: calc(var(--escala) * 22px);
+  text-align: center;
+  padding: calc(var(--escala) * 3px) calc(var(--escala) * 2px);
+}
+
+.carta-detalle-polabel {
+  font-size: calc(var(--escala) * 8px);
+  letter-spacing: calc(var(--escala) * 1px);
+  color: var(--oro-b);
+}
+
+/* II. Ilustración central: caja cuadrada con el arte del elemento. */
+.carta-abanico-preview .carta-preview-arte {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  width: 100%;
+  height: calc(var(--escala) * 128px);
+  border-radius: calc(var(--escala) * 6px);
+  border: calc(var(--escala) * 1px) solid var(--color-elem, var(--oro));
+  background: radial-gradient(circle at 50% 45%, var(--color-elem, #544), 68%, rgba(0, 0, 0, 0.45));
+}
+
+.carta-abanico-preview .carta-preview-arte .carta-img,
+.carta-abanico-preview .carta-preview-arte .carta-cresta {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.carta-abanico-preview .carta-preview-arte .carta-img {
+  image-rendering: pixelated;
+}
+
+/* III. Franja de iconos: elemento · tipo · objetivo/filtro. */
+.carta-detalle-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: calc(var(--escala) * 4px);
+}
+
+.carta-detalle-badge {
+  font-size: calc(var(--escala) * 9.5px);
+  letter-spacing: calc(var(--escala) * 0.4px);
+  color: var(--texto-2);
+  border: calc(var(--escala) * 1px) solid var(--linea-suave);
+  border-radius: calc(var(--escala) * 4px);
+  padding: calc(var(--escala) * 2px) calc(var(--escala) * 5px);
+  background: rgba(0, 0, 0, 0.22);
+}
+
+.carta-detalle-filtro {
+  color: var(--oro-b);
+  border-color: rgba(201, 162, 79, 0.4);
+}
+
+/* IV. Caja de texto: pergamino claro con coste y descripción. */
+.carta-preview-cuerpo {
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--escala) * 4px);
+  min-width: 0;
+  padding: calc(var(--escala) * 6px) calc(var(--escala) * 8px);
+  background: #f7f3ee;
+  border: calc(var(--escala) * 1px) solid rgba(60, 40, 12, 0.5);
+  border-radius: calc(var(--escala) * 5px);
+  box-shadow: inset 0 calc(var(--escala) * 1px) 0 rgba(255, 255, 255, 0.6);
+}
+
+.carta-preview-titulo {
+  font-family: var(--font-titulo);
+  font-size: calc(var(--escala) * 14px);
+  letter-spacing: calc(var(--escala) * 0.5px);
+  color: var(--oro-b);
+  line-height: 1.15;
+}
+
+.carta-preview-coste {
+  color: #8a6d1f;
+  font-weight: 600;
+}
+
+.carta-preview-desc {
+  color: #241a0e;
+  line-height: 1.35;
+}
+
+/* V. Pie: tipo y bando/objetivo permitido. */
+.carta-detalle-pie {
+  display: flex;
+  justify-content: space-between;
+  gap: calc(var(--escala) * 6px);
+  font-size: calc(var(--escala) * 9px);
+  letter-spacing: calc(var(--escala) * 0.4px);
+  color: var(--texto-3);
+  border-top: calc(var(--escala) * 1px) solid rgba(201, 162, 79, 0.25);
+  padding-top: calc(var(--escala) * 3px);
+}
+
+/* Menú de acción de la carta seleccionada: backdrop fijo + popover centrado.
+   El preview del hover queda libre de botones; el menú vive aparte. Cierra con
+   backdrop, Escape (manejado en App) o al jugar la carta. Pura presentación. */
+.carta-menu-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 45;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.carta-menu-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(10, 7, 4, 0.55);
+  backdrop-filter: blur(2px);
+  pointer-events: auto;
+}
+
+.carta-action-menu {
+  position: relative;
+  pointer-events: auto;
+  width: calc(var(--escala) * 200px);
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--escala) * 6px);
+  padding: calc(var(--escala) * 10px);
+  background: linear-gradient(180deg, rgba(39, 30, 19, 0.97), rgba(21, 17, 11, 0.99));
+  border: calc(var(--escala) * 2px) solid var(--color-elem, var(--oro));
+  border-top: calc(var(--escala) * 5px) solid var(--color-elem, var(--oro));
+  border-radius: calc(var(--escala) * 9px);
+  box-shadow: 0 calc(var(--escala) * 14px) calc(var(--escala) * 34px) rgba(0, 0, 0, 0.7);
+  font-size: calc(var(--escala) * 12px);
+  z-index: 1;
+}
+
+.carta-menu-titulo {
+  font-family: var(--font-titulo);
+  font-size: calc(var(--escala) * 14px);
+  letter-spacing: calc(var(--escala) * 0.5px);
+  color: var(--oro-b);
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: calc(var(--escala) * 6px);
+}
+
+.carta-menu-carta {
+  font-size: calc(var(--escala) * 10px);
+  color: var(--texto-2);
+  font-family: var(--font-base);
+}
+
+.carta-menu-arte {
+  height: calc(var(--escala) * 72px);
+  border-radius: calc(var(--escala) * 6px);
+  border: calc(var(--escala) * 1px) solid var(--color-elem, var(--oro));
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(circle at 50% 45%, var(--color-elem, #544), 68%, rgba(0, 0, 0, 0.45));
+}
+
+.carta-menu-arte .carta-img,
+.carta-menu-arte .carta-cresta {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.carta-menu-arte .carta-img {
+  image-rendering: pixelated;
+}
+
+.carta-menu-motivo {
+  align-self: center;
+}
+
+.mano-vacia {
+  padding: calc(var(--escala) * 6px) calc(var(--escala) * 14px);
+  border-radius: calc(var(--escala) * 8px);
+  background: linear-gradient(180deg, rgba(30, 23, 16, 0.8), rgba(18, 14, 9, 0.86));
+  border: calc(var(--escala) * 1px) solid rgba(201, 162, 79, 0.25);
+  pointer-events: none;
+}
+
+/* ═══ Token de unidad ══════════════════════════════════════════ */
+
+.hex-tile polygon {
+  transition: fill 0.15s ease, stroke 0.15s ease;
+}
+
+/* Arte por tile (PASO 8): el <image> recortado no roba clicks y hasta que un PNG
+   exista no altera el tinte plano de fondo (fallback sin latch). */
+.hex-tile-img {
+  pointer-events: none;
+}
+
+/* FASE 4 — affordance de click: solo los hexes accionables muestran puntero y
+   se aclaran al pasar el mouse (los bloqueados/normales se quedan quietos). */
+.hex-tile.interactivo:hover polygon {
+  filter: brightness(1.12);
+}
+
+.hex-tile.estado-alcanzable polygon { filter: drop-shadow(0 0 2px rgba(159, 216, 242, 0.45)); }
+.hex-tile.estado-rango polygon { filter: drop-shadow(0 0 2px rgba(176, 143, 224, 0.4)); }
+.hex-tile.estado-objetivo polygon { filter: drop-shadow(0 0 3px rgba(255, 107, 107, 0.55)); }
+.hex-tile.estado-objetivo2 polygon { filter: drop-shadow(0 0 2px rgba(255, 176, 107, 0.5)); }
+.hex-tile.estado-seleccionado polygon { filter: drop-shadow(0 0 4px rgba(255, 209, 102, 0.65)); }
+.hex-tile.estado-preview polygon { filter: drop-shadow(0 0 2px rgba(168, 230, 240, 0.45)); }
+.hex-tile.estado-bloqueado polygon { filter: drop-shadow(0 0 2px rgba(0, 0, 0, 0.4)); }
+
+.unit-token {
+  cursor: pointer;
+}
+
+/* US-093 — deslizamiento breve entre hexágonos (presentacional). */
+.unit-token {
+  transition: transform 0.26s ease;
+}
+
+/* ═══ US-097 — Coste de próxima acción junto a la unidad ═════════ */
+
+.coste-badge {
+  font-family: var(--font-titulo);
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.8));
+}
+
+.coste-badge rect {
+  fill: rgba(20, 16, 10, 0.92);
+  stroke: #e8c15a;
+  stroke-width: 1.2;
+}
+
+.coste-badge text {
+  fill: #ffd166;
+  font-size: 12px;
+  font-weight: 700;
+  stroke: #1a1410;
+  stroke-width: 2px;
+  paint-order: stroke;
+}
+
+.coste-badge .coste-badge-leyenda {
+  fill: #d8c9a3;
+  font-size: 5px;
+  font-weight: 600;
+}
+
+.coste-badge.no-podes rect {
+  stroke: #ff5252;
+}
+
+.coste-badge.no-podes text {
+  fill: #ff6b6b;
+}
+
+/* ═══ US-092 — Menú contextual junto a la unidad ═════════════════ */
+
+.unit-ctx-menu {
+  font-family: var(--font-titulo);
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.7));
+}
+
+.unit-ctx-menu > rect {
+  fill: rgba(28, 22, 14, 0.96);
+  stroke: #e8c15a;
+  stroke-width: 1.3;
+}
+
+.unit-ctx-item {
+  cursor: pointer;
+}
+
+.unit-ctx-item rect {
+  fill: transparent;
+  stroke: none;
+}
+
+.unit-ctx-item:hover rect {
+  fill: rgba(232, 193, 90, 0.18);
+  stroke: rgba(232, 193, 90, 0.5);
+  stroke-width: 1;
+}
+
+.unit-ctx-item text {
+  fill: #e8d9b0;
+  font-size: 9.5px;
+  font-weight: 700;
+  stroke: #1a1410;
+  stroke-width: 2px;
+  paint-order: stroke;
+  pointer-events: none;
+}
+
+.unit-ctx-item .unit-ctx-coste {
+  fill: #ffd166;
+}
+
+/* Sprite parado en pixel art: renderizado nítido, sin desenfoque al escalar. */
+.unit-token image {
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
+
+.unit-token:hover image {
+  transform: translateY(-2px);
+  transition: transform 0.12s ease;
+}
+
+/* FASE 4 — presencia: la silueta oscura tras el sprite solo aparece al pasar el
+  mouse o al seleccionar la unidad, para que las fichas en reposo no carguen
+  filtros permanentes. Presentacional, no reglas. */
+.unit-token:hover .token-sprite,
+.unit-token.seleccionado .token-sprite {
+  filter: drop-shadow(0 0 1.2px rgba(8, 6, 3, 0.55)) drop-shadow(0 1px 1.5px rgba(0, 0, 0, 0.35));
+}
+
+.unit-token .token-ring {
+  transition: stroke 0.15s ease, stroke-width 0.15s ease;
+  filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.5));
+}
+
+.unit-token.seleccionado .token-ring {
+  filter: drop-shadow(0 0 4px #ffd166);
+}
+
+.unit-token.objetivo .token-ring {
+  filter: drop-shadow(0 0 4px #ff6b6b);
+}
+
+/* D-24/25 (US-160/161): destacar canalizadores y objetivos de habilidad. */
+.unit-token.canalizador .token-ring {
+  filter: drop-shadow(0 0 5px #7dff8f);
+  stroke: #7dff8f;
+  stroke-width: 2.5;
+}
+
+.unit-token.objetivo-hab .token-ring {
+  filter: drop-shadow(0 0 5px #b17dff);
+  stroke: #b17dff;
+  stroke-width: 2.5;
+}
+
+/* FASE 4 — pulso de turno: las unidades del jugador activo laten suavemente
+   para indicar "con estas podés actuar ahora". Se apaga ante cualquier estado
+   de objetivo/selección (el anillo propio de esos estados manda). */
+.unit-token.activo:not(.seleccionado):not(.objetivo):not(.segundo):not(.canalizador):not(.objetivo-hab) .token-ring {
+  animation: turno-pulso 2.2s ease-in-out infinite;
+}
+
+@keyframes turno-pulso {
+  0%, 100% { filter: drop-shadow(0 0 2px rgba(255, 209, 102, 0.22)); }
+  50% { filter: drop-shadow(0 0 5px rgba(255, 209, 102, 0.55)); }
+}
+
+.token-ring.flashing {
+  animation: token-flash 0.7s ease-out;
+}
+
+/* Anillo sutil bajo cada Rey (presentación, no objetivo de reglas). */
+.rey-ring {
+  fill: rgba(201, 162, 79, 0.1);
+  stroke: rgba(232, 201, 122, 0.75);
+  stroke-width: 1.5;
+  stroke-dasharray: 5 4;
+  pointer-events: none;
+}
+
+@keyframes token-flash {
+  0% { filter: brightness(2.4); }
+  100% { filter: brightness(1); }
+}
+
+/* US-099 — retroceso: sacudida de impacto (presentacional). Se combina con el
+   deslizamiento del movimiento (US-093) sin alterar la posición lógica. */
+.token-cuerpo.sacudida {
+  animation: token-sacudida 0.32s ease-out;
+}
+
+@keyframes token-sacudida {
+  0% { transform: translateX(0); }
+  25% { transform: translateX(-5px); }
+  50% { transform: translateX(3px); }
+  75% { transform: translateX(-2px); }
+  100% { transform: translateX(0); }
+}
+
+/* US-104 — screen shake global (presentacional). Se dispara por eventos reales
+   del motor (herida, eliminacion, retroceso, explosión). Intensidad según el
+   tipo de evento, nunca por una regla de crítico inventada (GDD §19: diferido).
+   Respeta prefers-reduced-motion: si el sistema pide menos animaciones, no se
+   ejecuta y el resultado del motor sigue siendo comprensible. */
+.app.screen-shake-leve {
+  animation: app-shake-leve 0.28s ease-out;
+}
+
+.app.screen-shake-media {
+  animation: app-shake-media 0.34s ease-out;
+}
+
+.app.screen-shake-fuerte {
+  animation: app-shake-fuerte 0.42s ease-out;
+}
+
+@keyframes app-shake-leve {
+  0% { transform: translate(0, 0); }
+  30% { transform: translate(-3px, 1px); }
+  60% { transform: translate(2px, -1px); }
+  100% { transform: translate(0, 0); }
+}
+
+@keyframes app-shake-media {
+  0% { transform: translate(0, 0); }
+  20% { transform: translate(-5px, 2px); }
+  45% { transform: translate(4px, -2px); }
+  70% { transform: translate(-2px, 1px); }
+  100% { transform: translate(0, 0); }
+}
+
+@keyframes app-shake-fuerte {
+  0% { transform: translate(0, 0); }
+  15% { transform: translate(-8px, 3px); }
+  35% { transform: translate(7px, -3px); }
+  55% { transform: translate(-5px, 2px); }
+  75% { transform: translate(3px, -1px); }
+  100% { transform: translate(0, 0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app.screen-shake-leve,
+  .app.screen-shake-media,
+  .app.screen-shake-fuerte,
+  .banner-evento,
+  .banner-ganador,
+  .dev-modal-overlay,
+  .dev-modal,
+  .unit-token.activo .token-ring {
+    animation: none;
+  }
+  .unit-token,
+  .carta,
+  .btn-accion,
+  .roster-card,
+  .hex-tile polygon {
+    transition: none;
+  }
+}
+
+/* ═══ US-095 — Indicadores flotantes de combate ══════════════════ */
+
+.combate-feedback {
+  pointer-events: none;
+}
+
+.combate-flotante {
+  animation: combate-float 1.4s ease-out forwards;
+  font-family: var(--font-titulo);
+  letter-spacing: calc(var(--escala) * 0.5px);
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.85));
+}
+
+.combate-flotante text {
+  font-size: 13px;
+  font-weight: 700;
+  stroke: #1a1410;
+  stroke-width: 3px;
+  paint-order: stroke;
+}
+
+.cf-herida text { fill: #ff5252; }
+.cf-explosion text { fill: #ffd166; font-size: 15px; }
+.cf-stunned text { fill: #c9a4ff; }
+.cf-retroceso text { fill: #7fd4f0; }
+.cf-eliminado text { fill: #ff6b6b; font-size: 14px; }
+
+@keyframes combate-float {
+  0% { opacity: 0; transform: translate(0, 6px); }
+  18% { opacity: 1; transform: translate(0, 0); }
+  100% { opacity: 0; transform: translate(0, -26px); }
+}
+
+/* ═══ Ficha de unidad ══════════════════════════════════════════ */
+
+.unit-sheet {
+  position: relative;
+  background: linear-gradient(180deg, var(--bg-3) 0%, var(--bg-1) 100%);
+  border: calc(var(--escala) * 1px) solid var(--linea);
+  border-top: calc(var(--escala) * 3px) solid var(--color-banda, var(--linea));
+  border-radius: calc(var(--escala) * 8px);
+  padding: calc(var(--escala) * 10px);
+  box-shadow: inset 0 calc(var(--escala) * 1px) 0 rgba(255, 255, 255, 0.04), 0 calc(var(--escala) * 4px) calc(var(--escala) * 12px) rgba(0, 0, 0, 0.3);
+}
+
+.unit-sheet::before,
+.unit-sheet::after {
+  content: '';
+  position: absolute;
+  width: calc(var(--escala) * 12px);
+  height: calc(var(--escala) * 12px);
+  border: calc(var(--escala) * 2px) solid var(--oro);
+}
+.unit-sheet::before { top: -1px; left: -1px; border-right: 0; border-bottom: 0; }
+.unit-sheet::after { bottom: -1px; right: -1px; border-left: 0; border-top: 0; }
+
+.unit-sheet.vacio {
+  border-top-color: var(--linea);
+}
+
+.unit-sheet h3 {
+  font-family: var(--font-titulo);
+  font-size: calc(var(--escala) * 18px);
+  letter-spacing: calc(var(--escala) * 0.5px);
+  margin-bottom: calc(var(--escala) * 2px);
+}
+
+.fich-cabecera {
+  display: flex;
+  align-items: flex-start;
+  gap: calc(var(--escala) * 8px);
+  margin-bottom: calc(var(--escala) * 6px);
+  padding-bottom: calc(var(--escala) * 5px);
+  border-bottom: calc(var(--escala) * 1px) solid var(--linea-suave);
+}
+
+.fich-titulos {
+  flex: 1;
+  min-width: 0;
+}
+
+.fich-glifo {
+  flex-shrink: 0;
+  filter: drop-shadow(0 calc(var(--escala) * 2px) calc(var(--escala) * 3px) rgba(0, 0, 0, 0.4));
+}
+
+/* PASO 5 — retrato de la unidad: marco tipo ficha FE con el mismo sprite del
+   mapa recortado (clip hex), banda de facción de fondo, borde oro y sombra. */
+.fich-retrato-svg,
+.fich-retrato-glifo {
+  flex: 0 0 calc(var(--escala) * 88px);
+  width: calc(var(--escala) * 88px);
+  height: calc(var(--escala) * 88px);
+  border-radius: calc(var(--escala) * 8px);
+  background: linear-gradient(180deg, var(--color-banda, var(--bg-3)), var(--bg-1));
+  border: calc(var(--escala) * 2px) solid var(--oro);
+  box-shadow:
+    inset 0 0 calc(var(--escala) * 16px) rgba(0, 0, 0, 0.45),
+    0 calc(var(--escala) * 3px) calc(var(--escala) * 8px) rgba(0, 0, 0, 0.55);
+  overflow: hidden;
+  display: block;
+}
+
+.fich-retrato-glifo {
+  padding: calc(var(--escala) * 3px);
+}
+
+/* Barra de vida en la cabecera de la ficha: números "Vida x/y" montados
+   DENTRO de la barra (overlay centrado) para que respiren junto al retrato y
+   ahorren una línea de alto. El color de la cifra sigue al de la vida. */
+.fich-hp {
+  margin-top: calc(var(--escala) * 5px);
+}
+
+.fich-hp-letra {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: calc(var(--escala) * 9.5px);
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: calc(var(--escala) * 0.2px);
+  text-shadow: 0 calc(var(--escala) * 1px) calc(var(--escala) * 1px) rgba(0, 0, 0, 0.85);
+}
+
+.fich-hp-barra {
+  position: relative;
+  height: calc(var(--escala) * 10px);
+  border-radius: calc(var(--escala) * 4px);
+  background: rgba(0, 0, 0, 0.45);
+  border: calc(var(--escala) * 1px) solid rgba(0, 0, 0, 0.5);
+  overflow: hidden;
+}
+
+.fich-hp-barra-llena {
+  height: 100%;
+  border-radius: calc(var(--escala) * 3px);
+  transition: width 0.3s ease;
+}
+
+.fich-cresta {
+  flex-shrink: 0;
+  opacity: 0.9;
+}
+
+.fich-id {
+  color: var(--texto-3);
+  font-weight: normal;
+  font-size: calc(var(--escala) * 12px);
+}
+
+.fich-sub {
+  color: var(--texto-2);
+  font-size: calc(var(--escala) * 12px);
+}
+
+.fich-atributos {
+  /* PASO 4 — atributos compactos en grilla 2×3 de columnas parejas. */
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: calc(var(--escala) * 3px) calc(var(--escala) * 8px);
+  width: 100%;
+  font-size: calc(var(--escala) * 13px);
+  margin-bottom: calc(var(--escala) * 6px);
+}
+
+.fich-atrib {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  gap: calc(var(--escala) * 6px);
+  padding: calc(var(--escala) * 2px) calc(var(--escala) * 5px);
+  border-bottom: calc(var(--escala) * 1px) solid var(--linea-suave);
+}
+
+.fich-atrib-label {
+  color: var(--texto-3);
+  white-space: nowrap;
+}
+
+.fich-atrib-valor {
+  margin-left: auto;
+  color: var(--texto);
+  font-weight: 600;
+}
+
+/* Feedback de estados (PASO 7): valores modificados por carta/efecto. Azul =
+   bono activo, rojo = penalización pendiente (Ruptura/Disipar). Presentación. */
+.fich-atrib-valor.mod-azul {
+  color: #5fd7ff;
+}
+
+.fich-atrib-valor.mod-rojo {
+  color: #ff6b6b;
+}
+
+.fich-atrib-mod {
+  margin-left: calc(var(--escala) * 4px);
+  font-size: calc(var(--escala) * 9px);
+  font-weight: 700;
+  opacity: 0.92;
+  white-space: nowrap;
+}
+
+.fich-icono {
+  width: calc(var(--escala) * 15px);
+  height: calc(var(--escala) * 15px);
+  color: var(--oro);
+  vertical-align: -3px;
+  margin-right: calc(var(--escala) * 6px);
+}
+
+.fich-foco,
+.fich-tecnicas,
+.fich-estados,
+.fich-acciones {
+  font-size: calc(var(--escala) * 12px);
+  margin-bottom: calc(var(--escala) * 5px);
+}
+
+.fich-foco-slots {
+  display: flex;
+  gap: calc(var(--escala) * 4px);
+  margin-top: calc(var(--escala) * 4px);
+  flex-wrap: wrap;
+}
+
+.foco-slot {
+  width: calc(var(--escala) * 20px);
+  height: calc(var(--escala) * 20px);
+  border-radius: calc(var(--escala) * 4px);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: calc(var(--escala) * 13px);
+}
+
+.foco-slot.lleno {
+  background-color: var(--color-elem, var(--linea));
+  border: calc(var(--escala) * 1px) solid rgba(255, 255, 255, 0.35);
+  box-shadow: 0 0 calc(var(--escala) * 6px) var(--color-elem, transparent);
+}
+
+.foco-slot.vacio {
+  border: calc(var(--escala) * 1px) dashed var(--linea);
+  background: transparent;
+}
+
+.fich-tecnicas {
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--escala) * 3px);
+}
+
+.tecnica-fila {
+  display: flex;
+  align-items: center;
+  gap: calc(var(--escala) * 4px);
+  flex-wrap: wrap;
+  padding: calc(var(--escala) * 2px) calc(var(--escala) * 5px);
+  border: calc(var(--escala) * 1px) solid var(--linea-suave);
+  border-radius: calc(var(--escala) * 4px);
+  background: var(--bg-1);
+}
+
+.tecnica-fila.ok {
+  border-color: #6f5a2e;
+}
+
+.tecnica-nombre {
+  font-weight: 600;
+  font-size: calc(var(--escala) * 12px);
+  flex-shrink: 0;
+}
+
+.tecnica-coste {
+  display: flex;
+  gap: calc(var(--escala) * 3px);
+  flex-wrap: wrap;
+}
+
+.tecnica-req {
+  font-size: calc(var(--escala) * 9.5px);
+  padding: calc(var(--escala) * 1px) calc(var(--escala) * 4px);
+  border-radius: calc(var(--escala) * 3px);
+  border: calc(var(--escala) * 1px) solid var(--linea);
+  color: var(--texto-2);
+  background: rgba(0, 0, 0, 0.25);
+}
+
+.tecnica-req.cubierto {
+  color: var(--color-elem, var(--exito));
+  border-color: var(--color-elem, var(--exito));
+}
+
+.tecnica-estado {
+  font-size: calc(var(--escala) * 10px);
+  color: var(--texto-3);
+  margin-left: auto;
+}
+
+.tecnica-estado.ok {
+  color: var(--exito);
+}
+
+/* ═══ Registro ═════════════════════════════════════════════════ */
+
+.log-panel {
+  flex: 0 0 calc(var(--escala) * 160px);
+  height: calc(var(--escala) * 160px);
+  overflow-y: auto;
+  font-size: calc(var(--escala) * 12.5px);
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--escala) * 3px);
+  padding: calc(var(--escala) * 5px) calc(var(--escala) * 8px);
+  border: calc(var(--escala) * 1px) solid var(--linea-suave);
+  border-radius: calc(var(--escala) * 6px);
+  background: rgba(0, 0, 0, 0.3);
+}
+
+.log-entry {
+  border-bottom: calc(var(--escala) * 1px) solid rgba(255, 255, 255, 0.05);
+  padding: calc(var(--escala) * 2px) 0;
+  line-height: 1.35;
+}
+
+.log-ronda,
+.log-turno,
+.log-actor,
+.log-tipo {
+  margin-right: calc(var(--escala) * 6px);
+  color: var(--texto-3);
+}
+
+.log-tipo {
+  color: #9fb8ff;
+}
+
+.log-ataque .log-tipo { color: #ff8fa3; }
+.log-error .log-tipo { color: var(--alerta); }
+.log-herida .log-tipo { color: #ffb74d; }
+.log-carta-jugada .log-tipo { color: #7ab8ff; }
+.log-fin-partida .log-tipo,
+.log-fin-ronda .log-tipo { color: var(--exito); }
+
+.log-descripcion {
+  display: block;
+  color: var(--texto);
+}
+
+/* ═══ Paneles flotantes ════════════════════════════════════════ */
+
+.panel-flotante {
+  /* UI-04 — ventana flotante centrada sobre el mundo (ataque, concentrar,
+     habilidad, reflujo, reglas): translúcida con blur, sin franja sólida. */
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 55;
+  max-width: min(calc(var(--escala) * 680px), 92vw);
+  padding: calc(var(--escala) * 10px) calc(var(--escala) * 12px);
+  background: linear-gradient(180deg, rgba(39, 30, 19, 0.82), rgba(21, 17, 11, 0.88));
+  border: calc(var(--escala) * 1px) solid rgba(201, 162, 79, 0.35);
+  border-left: calc(var(--escala) * 3px) solid var(--oro);
+  border-radius: calc(var(--escala) * 8px);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: calc(var(--escala) * 10px);
+  font-size: calc(var(--escala) * 13px);
+  box-shadow: 0 calc(var(--escala) * 10px) calc(var(--escala) * 28px) rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(7px);
+}
+
+.conf-head {
+  width: 100%;
+  margin-bottom: calc(var(--escala) * 4px);
+}
+
+.technique-picker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: calc(var(--escala) * 6px);
+  align-items: center;
+}
+
+.btn-tecnica,
+.btn-elemento {
+  display: inline-flex;
+  flex-direction: column;
+  gap: calc(var(--escala) * 2px);
+  align-items: flex-start;
+  font-size: calc(var(--escala) * 12px);
+}
+
+.btn-tecnica.seleccionada,
+.btn-elemento {
+  border-color: var(--oro);
+}
+
+.tecnica-cab {
+  display: flex;
+  align-items: center;
+  gap: calc(var(--escala) * 8px);
+}
+
+.tec-chips {
+  display: flex;
+  gap: calc(var(--escala) * 4px);
+  flex-wrap: wrap;
+}
+
+.tec-chip {
+  font-size: calc(var(--escala) * 10px);
+  padding: calc(var(--escala) * 1px) calc(var(--escala) * 6px);
+  border-radius: calc(var(--escala) * 3px);
+  border: calc(var(--escala) * 1px) solid var(--linea);
+  background: rgba(0, 0, 0, 0.25);
+  color: var(--texto-2);
+}
+
+.tec-chip.cubierto {
+  color: var(--color-elem, var(--exito));
+  border-color: var(--color-elem, var(--exito));
+}
+
+.tec-chip.faltante {
+  color: var(--texto-3);
+  border-style: dashed;
+  opacity: 0.7;
+}
+
+.conf-acciones {
+  display: flex;
+  gap: calc(var(--escala) * 8px);
+}
+
+.btn-jugar {
+  background: linear-gradient(180deg, #2d5a3a, #1e4228);
+  border-color: #4a8a5a;
+}
+
+/* D-24/25 (US-160/161): botón de jugar carta como Habilidad y su descripción. */
+.btn-habilidad {
+  background: linear-gradient(180deg, #432d6a, #2c1f46);
+  border-color: #7d5ad9;
+}
+
+.habilidad-carta {
+  margin: calc(var(--escala) * 4px) 0 calc(var(--escala) * 4px);
+  padding: calc(var(--escala) * 3px) calc(var(--escala) * 6px);
+  border-left: 3px solid var(--color-elem, #7d5ad9);
+  border-radius: calc(var(--escala) * 3px);
+  font-size: calc(var(--escala) * 11px);
+}
+
+/* Arte de carta: imagen elemental con fallback a la cresta SVG de placeholder. */
+.carta-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: calc(var(--escala) * 3px);
+  image-rendering: pixelated;
+}
+
+.btn-cancelar {
+  background: linear-gradient(180deg, #5a2a35, #3e1c24);
+  border-color: #8a4a58;
+}
+
+.picker-elementos {
+  display: flex;
+  gap: calc(var(--escala) * 6px);
+  flex-wrap: wrap;
+}
+
+/* ═══ Reflujo (D-16) ═══════════════════════════════════════════ */
+
+.reflujo-dados {
+  display: flex;
+  gap: calc(var(--escala) * 8px);
+  flex-wrap: wrap;
+}
+
+.reflujo-dado {
+  display: flex;
+  align-items: center;
+  gap: calc(var(--escala) * 4px);
+  border: calc(var(--escala) * 1px) solid var(--linea);
+  background: var(--bg-0);
+  padding: calc(var(--escala) * 3px) calc(var(--escala) * 9px);
+  border-radius: calc(var(--escala) * 4px);
+  cursor: pointer;
+  font-size: calc(var(--escala) * 13px);
+  user-select: none;
+}
+
+.reflujo-dado.seleccionado {
+  border-color: var(--oro);
+  background: #3a2c14;
+}
+
+/* ═══ Panel de reglas ══════════════════════════════════════════ */
+
+.panel-reglas {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: calc(var(--escala) * 8px);
+  max-height: 86vh;
+  overflow-y: auto;
+}
+
+.regla-fila {
+  display: flex;
+  align-items: center;
+  gap: calc(var(--escala) * 8px);
+  font-size: calc(var(--escala) * 12px);
+}
+
+.regla-fila select,
+.regla-fila input[type="number"] {
+  background: var(--bg-0);
+  border: calc(var(--escala) * 1px) solid var(--linea);
+  color: var(--texto);
+  border-radius: calc(var(--escala) * 4px);
+  padding: calc(var(--escala) * 2px) calc(var(--escala) * 6px);
+}
+
+/* Selector de mapa (Portada + Ajustes): misma línea visual que el input de
+   semilla, sin robar protagonismo. */
+.selector-mapa {
+  background: var(--bg-0);
+  border: calc(var(--escala) * 1px) solid var(--linea);
+  color: var(--texto);
+  border-radius: calc(var(--escala) * 4px);
+  padding: calc(var(--escala) * 3px) calc(var(--escala) * 8px);
+  margin-left: calc(var(--escala) * 6px);
+  max-width: calc(var(--escala) * 260px);
+}
+
+.metricas {
+  font-size: calc(var(--escala) * 11px);
+  color: var(--texto-3);
+  margin-top: calc(var(--escala) * 2px);
+}
+
+/* ═══ Pie (cartas · acciones · PO) ══════════════════════════════ */
+
+.po-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: calc(var(--escala) * 10px);
+  align-items: center;
+  font-size: calc(var(--escala) * 14px);
+}
+
+.po-nombre {
+  font-weight: 700;
+  margin-right: calc(var(--escala) * 2px);
+  font-family: var(--font-titulo);
+  letter-spacing: calc(var(--escala) * 1px);
+  font-size: calc(var(--escala) * 16px);
+}
+
+.po-sin {
+  color: var(--texto-3);
+}
+
+.po-item {
+  display: inline-flex;
+  align-items: center;
+  gap: calc(var(--escala) * 5px);
+  padding: calc(var(--escala) * 3px) calc(var(--escala) * 11px);
+  border-radius: calc(var(--escala) * 12px);
+  border: calc(var(--escala) * 1px) solid var(--oro);
+  background: rgba(0, 0, 0, 0.35);
+  color: var(--color-elem, var(--texto));
+  font-weight: 700;
+  font-size: calc(var(--escala) * 14px);
+  box-shadow: 0 0 calc(var(--escala) * 8px) var(--color-elem, transparent);
+}
+
+.po-total {
+  color: var(--texto-3);
+  font-size: calc(var(--escala) * 12px);
+}
+
+.po-disponible {
+  margin-top: calc(var(--escala) * 4px);
+}
+
+.hand-panel {
+  flex: 1.3;
+  min-width: calc(var(--escala) * 260px);
+}
+
+.hand-panel .panel-titulo {
+  margin-bottom: calc(var(--escala) * 5px);
+}
+
+.mano {
+  display: flex;
+  flex-wrap: nowrap;
+  justify-content: center;
+  align-items: flex-end;
+  gap: 0;
+  margin-bottom: calc(var(--escala) * 7px);
+  padding-bottom: calc(var(--escala) * 10px);
+}
+
+.carta {
+  position: relative;
+  z-index: 1;
+  width: calc(var(--escala) * 78px);
+  height: calc(var(--escala) * 108px);
+  background:
+    radial-gradient(circle at 50% 28%, rgba(255, 255, 255, 0.10), transparent 55%),
+    repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.02) 0 calc(var(--escala) * 2px), transparent calc(var(--escala) * 2px) calc(var(--escala) * 5px)),
+    linear-gradient(180deg, #4a3a22 0%, #2c2012 60%, #1b130a 100%);
+  border: calc(var(--escala) * 1px) solid var(--oro);
+  border-top: calc(var(--escala) * 4px) solid var(--color-elem, var(--oro));
+  border-radius: calc(var(--escala) * 9px);
+  display: flex;
+  flex-direction: column;
+  cursor: pointer;
+  padding: 0;
+  box-shadow: 0 calc(var(--escala) * 4px) calc(var(--escala) * 10px) rgba(0, 0, 0, 0.5), inset 0 calc(var(--escala) * 1px) 0 rgba(255, 255, 255, 0.08);
+  transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.mano .carta {
+  /* US-096 — abanico: rotación y arco definidos por --rot/--baja (JSX). */
+  transform: rotate(var(--rot, 0deg)) translateY(var(--baja, 0px));
+  transform-origin: 50% 100%;
+  margin-left: calc(var(--escala) * -20px);
+}
+
+.mano .carta:first-child {
+  margin-left: 0;
+}
+
+.carta:hover:not(:disabled),
+.carta.seleccionada {
+  z-index: 5;
+}
+
+.carta:hover:not(:disabled) {
+  transform: translateY(calc(var(--escala) * -12px)) scale(1.06) rotate(0deg);
+  border-color: var(--color-elem, var(--oro));
+  box-shadow: 0 calc(var(--escala) * 12px) calc(var(--escala) * 22px) rgba(0, 0, 0, 0.5), 0 0 calc(var(--escala) * 14px) var(--color-elem, rgba(201, 162, 79, 0.35));
+}
+
+.carta-cab {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: calc(var(--escala) * 5px) calc(var(--escala) * 8px) 0;
+}
+
+.carta-simbolo {
+  font-size: calc(var(--escala) * 27px);
+  line-height: 1;
+  filter: drop-shadow(0 calc(var(--escala) * 1px) calc(var(--escala) * 2px) rgba(0, 0, 0, 0.4));
+}
+
+.carta-valor {
+  font-size: calc(var(--escala) * 17px);
+  font-weight: 800;
+  line-height: 1;
+  color: #241a0e;
+  background: linear-gradient(180deg, var(--oro-b), var(--oro));
+  border: calc(var(--escala) * 1px) solid #8a6d2b;
+  border-radius: calc(var(--escala) * 5px);
+  min-width: calc(var(--escala) * 22px);
+  text-align: center;
+  padding: calc(var(--escala) * 3px) calc(var(--escala) * 2px);
+}
+
+.carta-arte {
+  position: relative;
+  flex: 1;
+  margin: calc(var(--escala) * 6px) calc(var(--escala) * 8px);
+  border-radius: calc(var(--escala) * 5px);
+  background: radial-gradient(circle at 50% 45%, var(--color-elem, #544), 70%, rgba(0, 0, 0, 0.35));
+  opacity: 0.55;
+  border: calc(var(--escala) * 1px) solid rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+}
+
+.carta-cresta {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0.18;
+}
+
+.carta-orden {
+  text-align: center;
+  font-size: calc(var(--escala) * 9px);
+  letter-spacing: calc(var(--escala) * 3px);
+  color: var(--oro-b);
+  padding-bottom: calc(var(--escala) * 6px);
+}
+
+.carta.seleccionada {
+  border-color: var(--oro-b);
+  box-shadow: 0 0 0 calc(var(--escala) * 3px) var(--oro), 0 calc(var(--escala) * 12px) calc(var(--escala) * 24px) rgba(0, 0, 0, 0.55);
+  transform: scale(1.1) translateY(calc(var(--escala) * -7px));
+}
+
+.carta-deshabilitada {
+  opacity: 0.4;
+}
+
+.action-menu {
+  min-width: calc(var(--escala) * 300px);
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--escala) * 6px);
+}
+
+.action-menu .panel-titulo {
+  margin-bottom: calc(var(--escala) * 2px);
+}
+
+.acciones-basicas {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: calc(var(--escala) * 8px);
+}
+
+.btn-accion {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: calc(var(--escala) * 3px);
+  font-size: calc(var(--escala) * 13px);
+  padding: calc(var(--escala) * 9px) calc(var(--escala) * 12px);
+  border-radius: calc(var(--escala) * 6px);
+}
+
+.btn-accion:not(:disabled) {
+  border-color: #6f5a2e;
+}
+
+.btn-accion:not(:disabled):hover {
+  border-color: var(--oro);
+  box-shadow: 0 0 calc(var(--escala) * 12px) rgba(201, 162, 79, 0.15);
+}
+
+.acc-icono {
+  font-size: calc(var(--escala) * 20px);
+  line-height: 1;
+}
+
+.acc-nombre {
+  font-weight: 700;
+  font-size: calc(var(--escala) * 14px);
+}
+
+.acc-coste {
+  position: absolute;
+  top: calc(var(--escala) * 5px);
+  right: calc(var(--escala) * 6px);
+  color: var(--oro-b);
+  font-size: calc(var(--escala) * 12px);
+  font-weight: 700;
+  background: var(--bg-0);
+  border: calc(var(--escala) * 1px) solid var(--oro);
+  border-radius: calc(var(--escala) * 10px);
+  padding: calc(var(--escala) * 1px) calc(var(--escala) * 8px);
+}
+
+.tecnicas-defensa {
+  display: flex;
+  flex-wrap: wrap;
+  gap: calc(var(--escala) * 6px);
+  align-items: center;
+}
+
+.btn-fin-turno {
+  padding: calc(var(--escala) * 9px) calc(var(--escala) * 16px);
+  background: linear-gradient(180deg, #7a2a38, #5a1e2a);
+  border-color: #a84a58;
+  font-size: calc(var(--escala) * 14px);
+  font-family: var(--font-titulo);
+  letter-spacing: calc(var(--escala) * 1px);
+}
+
+.btn-fin-turno:hover:not(:disabled) {
+  border-color: var(--fuego);
+}
+
+.hint-obligatoria {
+  color: var(--fuego);
+  font-weight: 600;
+  font-size: calc(var(--escala) * 12px);
+}
+
+/* ═══ Combate ══════════════════════════════════════════════════ */
+
+.combate-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  background: rgba(8, 6, 3, 0.68);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(2px);
+}
+
+.combate-panel {
+  position: relative;
+  width: min(calc(var(--escala) * 720px), 94vw);
+  padding: calc(var(--escala) * 18px) calc(var(--escala) * 24px) calc(var(--escala) * 20px);
+  border-radius: calc(var(--escala) * 10px);
+  border: calc(var(--escala) * 2px) solid var(--oro);
+  box-shadow: 0 0 0 calc(var(--escala) * 4px) rgba(201, 162, 79, 0.22), 0 calc(var(--escala) * 24px) calc(var(--escala) * 60px) rgba(0, 0, 0, 0.65);
+  background: linear-gradient(180deg, #2b2014, #1a130b);
+}
+
+.combate-panel::before,
+.combate-panel::after {
+  content: '';
+  position: absolute;
+  width: calc(var(--escala) * 26px);
+  height: calc(var(--escala) * 26px);
+  border: calc(var(--escala) * 3px) solid var(--oro-b);
+}
+.combate-panel::before { top: calc(var(--escala) * -3px); left: calc(var(--escala) * -3px); border-right: 0; border-bottom: 0; }
+.combate-panel::after { bottom: calc(var(--escala) * -3px); right: calc(var(--escala) * -3px); border-left: 0; border-top: 0; }
+
+.combate-titulo {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: calc(var(--escala) * 6px);
+  margin-bottom: calc(var(--escala) * 12px);
+  font-family: var(--font-titulo);
+  font-size: calc(var(--escala) * 21px);
+  letter-spacing: calc(var(--escala) * 1px);
+  color: var(--oro-b);
+  border-bottom: calc(var(--escala) * 1px) solid var(--linea);
+  padding-bottom: calc(var(--escala) * 8px);
+}
+
+.combate-rol {
+  font-size: calc(var(--escala) * 12px);
+  color: var(--texto-3);
+  font-family: var(--font-ui);
+}
+
+.combate-bandas {
+  display: flex;
+  align-items: center;
+  gap: calc(var(--escala) * 18px);
+}
+
+.combate-bando {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--escala) * 6px);
+}
+
+.combate-nombre {
+  display: flex;
+  align-items: center;
+  gap: calc(var(--escala) * 6px);
+  font-size: calc(var(--escala) * 12px);
+  letter-spacing: calc(var(--escala) * 1px);
+  color: var(--texto-2);
+}
+
+.combate-mini {
+  flex-shrink: 0;
+  filter: drop-shadow(0 calc(var(--escala) * 2px) calc(var(--escala) * 3px) rgba(0, 0, 0, 0.45));
+}
+
+.combate-bando.atacante .combate-nombre { color: var(--fuego); }
+.combate-bando.defensor .combate-nombre { color: var(--agua); }
+
+.combate-pool {
+  display: flex;
+  flex-wrap: wrap;
+  gap: calc(var(--escala) * 7px);
+  align-items: center;
+}
+
+.combate-pool-tag {
+  font-size: calc(var(--escala) * 11px);
+  color: var(--texto-3);
+  border: calc(var(--escala) * 1px) solid var(--linea);
+  border-radius: calc(var(--escala) * 3px);
+  padding: calc(var(--escala) * 2px) calc(var(--escala) * 6px);
+}
+
+.dado {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: calc(var(--escala) * 2px);
+  animation: dado-caer 0.4s ease-out backwards;
+}
+
+.dado-facha {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-width: calc(var(--escala) * 54px);
+  min-height: calc(var(--escala) * 56px);
+  padding: 0 calc(var(--escala) * 7px);
+  background: linear-gradient(180deg, #f5ead2, #d3c299);
+  color: #2a2015;
+  font-weight: 800;
+  font-size: calc(var(--escala) * 17px);
+  clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+  box-shadow: inset 0 calc(var(--escala) * -3px) 0 rgba(0, 0, 0, 0.18), 0 calc(var(--escala) * 3px) calc(var(--escala) * 6px) rgba(0, 0, 0, 0.35);
+}
+
+.dado.exploto .dado-facha {
+  filter: drop-shadow(0 0 calc(var(--escala) * 6px) rgba(232, 201, 122, 0.8));
+  background: linear-gradient(180deg, #fbe9c0, #d8b878);
+}
+
+.dado-explosion {
+  font-size: calc(var(--escala) * 8px);
+  letter-spacing: calc(var(--escala) * 1px);
+  color: var(--oro-b);
+  font-weight: 700;
+}
+
+@keyframes dado-caer {
+  from { transform: translateY(calc(var(--escala) * -18px)) rotate(-10deg); opacity: 0; }
+  to { transform: none; opacity: 1; }
+}
+
+.dado-cadena {
+  display: flex;
+  align-items: baseline;
+  gap: calc(var(--escala) * 2px);
+}
+
+.dado-primario {
+  font-size: calc(var(--escala) * 23px);
+}
+
+.dado-exploto {
+  color: #a85a10;
+  font-size: calc(var(--escala) * 12px);
+}
+
+.dado-umbral {
+  color: #a85a10;
+  font-size: calc(var(--escala) * 9px);
+  line-height: 1;
+}
+
+.combate-kept {
+  font-size: calc(var(--escala) * 12px);
+  color: var(--texto-2);
+}
+
+.combate-suma {
+  font-family: var(--font-titulo);
+  font-size: calc(var(--escala) * 19px);
+  color: var(--texto);
+}
+
+.combate-vs {
+  font-family: var(--font-titulo);
+  font-size: calc(var(--escala) * 34px);
+  color: var(--oro);
+  text-shadow: 0 0 calc(var(--escala) * 12px) rgba(201, 162, 79, 0.4);
+  flex-shrink: 0;
+}
+
+.combate-resultado {
+  margin-top: calc(var(--escala) * 14px);
+  padding: calc(var(--escala) * 8px) calc(var(--escala) * 12px);
+  border-radius: calc(var(--escala) * 6px);
+  text-align: center;
+  font-size: calc(var(--escala) * 14px);
+  letter-spacing: calc(var(--escala) * 0.5px);
+  background: rgba(255, 107, 107, 0.12);
+  border: calc(var(--escala) * 1px) solid var(--alerta);
+  color: #ffb3b3;
+}
+
+.combate-resultado.gana-atacante {
+  background: rgba(111, 191, 122, 0.1);
+  border-color: var(--exito);
+  color: #a8e2ae;
+}
+
+.btn-combate-cerrar {
+  display: block;
+  margin: calc(var(--escala) * 16px) auto 0;
+  padding: calc(var(--escala) * 8px) calc(var(--escala) * 22px);
+  font-family: var(--font-titulo);
+  letter-spacing: calc(var(--escala) * 1px);
+  color: #2a2015;
+  background: linear-gradient(180deg, var(--oro-b), var(--oro));
+  border-color: #8a6d2b;
+}
+
+.btn-combate-cerrar:hover {
+  transform: translateY(calc(var(--escala) * -1px));
+  box-shadow: 0 calc(var(--escala) * 5px) calc(var(--escala) * 16px) rgba(201, 162, 79, 0.3);
+}
+
+/* ═══ Responsive ═══════════════════════════════════════════════ */
+
+@media (max-width: 1280px) {
+  .carta {
+    width: calc(var(--escala) * 68px);
+    height: calc(var(--escala) * 94px);
+  }
+  .carta-simbolo {
+    font-size: calc(var(--escala) * 23px);
+  }
+  .carta-valor {
+    font-size: calc(var(--escala) * 15px);
+  }
+  .action-menu {
+    min-width: calc(var(--escala) * 250px);
+  }
+  .banda-bloque {
+    min-width: calc(var(--escala) * 180px);
+  }
+  .portada-selector {
+    min-width: calc(var(--escala) * 190px);
+  }
+  .plantillas-lateral {
+    --plantillas-ancho: 222px;
+  }
+  .mano-lateral {
+    --mano-ancho: 96px;
+  }
+}
+
+@media (max-width: 1000px) {
+  .plantillas-lateral {
+    --plantillas-ancho: 150px;
+  }
+  .mano-lateral {
+    --mano-ancho: 64px;
+  }
+  .roster-stats,
+  .roster-estados {
+    display: none;
+  }
+  .carta-mini {
+    flex-direction: column;
+    gap: calc(var(--escala) * 2px);
+    justify-content: center;
+    padding: calc(var(--escala) * 4px);
+  }
+}
+
+/* --- US-101/US-103 � Simulaci�n y telemetr�a ------------------- */
+
+.sim-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(12, 9, 4, 0.72);
+}
+
+.sim-panel {
+  width: min(760px, 94vw);
+  max-height: 88vh;
+  overflow-y: auto;
+  background: linear-gradient(180deg, var(--bg-3) 0%, var(--bg-1) 100%);
+  border: calc(var(--escala) * 1px) solid var(--linea);
+  border-radius: calc(var(--escala) * 10px);
+  padding: calc(var(--escala) * 16px);
+}
+
+.sim-cabecera {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: calc(var(--escala) * 12px);
+  font-size: calc(var(--escala) * 16px);
+  font-family: var(--font-titulo);
+  color: var(--oro);
+}
+
+.sim-controles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: calc(var(--escala) * 10px);
+  align-items: flex-end;
+  margin-bottom: calc(var(--escala) * 12px);
+}
+
+.sim-controles label {
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--escala) * 4px);
+  font-size: calc(var(--escala) * 11px);
+  color: var(--texto-2);
+}
+
+.sim-controles select {
+  background: var(--bg-0);
+  color: var(--texto);
+  border: calc(var(--escala) * 1px) solid var(--linea);
+  border-radius: calc(var(--escala) * 5px);
+  padding: calc(var(--escala) * 5px) calc(var(--escala) * 8px);
+}
+
+.sim-progreso {
+  height: calc(var(--escala) * 8px);
+  background: var(--bg-0);
+  border-radius: calc(var(--escala) * 4px);
+  overflow: hidden;
+  margin-bottom: calc(var(--escala) * 12px);
+}
+
+.sim-barra {
+  height: 100%;
+  background: linear-gradient(90deg, var(--oro), var(--oro-b));
+  transition: width 0.15s ease;
+}
+
+.sim-resultados section {
+  margin-top: calc(var(--escala) * 12px);
+}
+
+.sim-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: calc(var(--escala) * 8px);
+}
+
+.sim-metrica {
+  background: var(--bg-0);
+  border: calc(var(--escala) * 1px) solid var(--linea-suave);
+  border-radius: calc(var(--escala) * 7px);
+  padding: calc(var(--escala) * 8px);
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--escala) * 2px);
+}
+
+.sim-metrica.sim-fuego { border-top: calc(var(--escala) * 3px) solid #e05c3c; }
+.sim-metrica.sim-agua { border-top: calc(var(--escala) * 3px) solid #3498db; }
+
+.sim-valor {
+  font-size: calc(var(--escala) * 18px);
+  font-weight: 800;
+  font-family: var(--font-titulo);
+  color: var(--texto);
+}
+
+.sim-etiqueta {
+  font-size: calc(var(--escala) * 10.5px);
+  color: var(--texto-2);
+}
+
+.sim-extremos {
+  margin-top: calc(var(--escala) * 10px);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: calc(var(--escala) * 8px);
+  font-size: calc(var(--escala) * 11px);
+}
+
+.tele-alerta {
+  color: #ff8c5a;
+  font-weight: 700;
+}
+
+.tele-bien {
+  color: var(--exito);
+}
+
+.sim-tabla-arquetipos {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: calc(var(--escala) * 11px);
+  margin-top: calc(var(--escala) * 8px);
+}
+
+.sim-tabla-arquetipos th,
+.sim-tabla-arquetipos td {
+  border: 1px solid var(--linea);
+  padding: calc(var(--escala) * 4px) calc(var(--escala) * 8px);
+  text-align: left;
+}
+
+.sim-tabla-arquetipos th {
+  color: var(--oro-b);
+  background: var(--bg-2);
+  font-weight: 600;
+}
+
+.sim-tabla-arquetipos tr.tele-alerta td {
+  color: #ff8c5a;
+}
+
+.sim-tabla-arquetipos tr.tele-bien td {
+  color: var(--exito);
+}
+
+.sim-semillas {
+  color: var(--texto-2);
+  font-style: italic;
+}
+
+/* --- US-102 � Barra de replay paso a paso ----------------------- */
+
+.replay-bar {
+  display: flex;
+  align-items: center;
+  gap: calc(var(--escala) * 8px);
+  padding: calc(var(--escala) * 6px) calc(var(--escala) * 16px);
+  background: linear-gradient(90deg, #3a2c16, #2c2012);
+  border-bottom: calc(var(--escala) * 2px) solid var(--oro);
+  font-size: calc(var(--escala) * 12px);
+}
+
+.replay-titulo {
+  color: var(--oro);
+  font-family: var(--font-titulo);
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.replay-progreso {
+  flex: 1;
+  height: calc(var(--escala) * 7px);
+  background: var(--bg-0);
+  border-radius: calc(var(--escala) * 4px);
+  overflow: hidden;
+}
+
+.replay-barra {
+  height: 100%;
+  background: linear-gradient(90deg, var(--oro-b), var(--oro));
+  transition: width 0.2s ease;
+}
