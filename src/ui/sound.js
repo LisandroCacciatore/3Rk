@@ -94,6 +94,25 @@ export function sonidoCarta() {
   tono('triangle', 880, 940, 0.08, 0.14, 0.07)
 }
 
+// Explosión encadenada (3+ chain) — dramática.
+export function sonidoExplosion() {
+  ruido(0.35, 0.6)
+  tono('sawtooth', 220, 80, 0.3, 0.4)
+  tono('square', 440, 220, 0.2, 0.2, 0.1)
+}
+
+// Técnica ejecutada — satisfactoria.
+export function sonidoTecnica() {
+  tono('triangle', 660, 880, 0.15, 0.25)
+  tono('triangle', 880, 1100, 0.12, 0.2, 0.12)
+}
+
+// Amenaza al Rey — urgente.
+export function sonidoAmenazaRey() {
+  tono('square', 180, 140, 0.4, 0.3)
+  tono('square', 140, 100, 0.3, 0.25, 0.2)
+}
+
 // Fanfarria corta de victoria.
 export function sonidoFanfarria() {
   tono('triangle', 523, 523, 0.16, 0.24)

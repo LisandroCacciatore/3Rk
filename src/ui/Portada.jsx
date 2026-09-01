@@ -1,8 +1,9 @@
-import React from 'react'
+import React, { useMemo } from 'react'
 import { CrestaFaccion } from './glifos.jsx'
 import { assetUnidad } from './assets.js'
 import SeedInput from './SeedInput.jsx'
 import MapaPreview from './MapaPreview.jsx'
+import { estadisticasJugador } from '../data/historial.js'
 
 // Identidad visual de cada facción en el lobby (solo presentación). La paleta
 // del lobby es una decisión estética propia y puede diferir de la del tablero:
@@ -109,6 +110,7 @@ export default function Portada({
   onComenzar,
 }) {
   const escenario = escenarios.find(s => s.id === escenarioSel)
+  const stats = useMemo(() => estadisticasJugador(), [])
   return (
     <div className="portada">
       <div className="portada-titulo">
@@ -149,6 +151,27 @@ export default function Portada({
           ⚔️ COMENZAR ESCARAMUZA
         </button>
       </div>
+
+      {stats && (
+        <div className="portada-stats-resumen">
+          <div className="portada-stat-item">
+            <span className="portada-stat-numero">{stats.totalPartidas}</span>
+            <span className="portada-stat-label">partidas</span>
+          </div>
+          <div className="portada-stat-item">
+            <span className="portada-stat-numero">{stats.porcentajeVictoriasA}%</span>
+            <span className="portada-stat-label">victorias</span>
+          </div>
+          <div className="portada-stat-item">
+            <span className="portada-stat-numero">{stats.rondasPromedio}</span>
+            <span className="portada-stat-label">rondas prom.</span>
+          </div>
+          <div className="portada-stat-item">
+            <span className="portada-stat-numero">{stats.faccionMasUsada}</span>
+            <span className="portada-stat-label">facción top</span>
+          </div>
+        </div>
+      )}
 
       <div className="portada-mapa">
         <MapaPreview escenarioId={escenarioSel} semilla={semilla} />

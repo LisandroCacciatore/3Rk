@@ -37,3 +37,10 @@ export function cantidadPorElemento(unidad) {
   }
   return conteo
 }
+
+const COSTES_FOCO = [1, 3, 5]
+
+export function costeSiguienteToken(unidad) {
+  const n = unidad.foco.length
+  return n < COSTES_FOCO.length ? COSTES_FOCO[n] : COSTES_FOCO[COSTES_FOCO.length - 1] + 2 * (n - COSTES_FOCO.length + 1)
+}

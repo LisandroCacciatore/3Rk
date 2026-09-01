@@ -22,6 +22,7 @@ export default function DevModal({
   onEsquematico,
   manoAMano = true,
   onManoAMano,
+  onHistorial,
 }) {
   return (
     <div className="dev-modal-overlay" onClick={onCerrar}>
@@ -33,6 +34,7 @@ export default function DevModal({
         <div className="dev-modal-cuerpo">
           <button className="btn-sec" onClick={onReglas}>Reglas</button>
           <button className="btn-sec" onClick={onSimular}>Simular</button>
+          <button className="btn-sec" onClick={onHistorial}>Historial</button>
           <button className="btn-sec" onClick={onExportar}>Exportar</button>
           <button className="btn-sec" onClick={onCopiar}>{copiado ? 'Copiado ✓' : 'Copiar Replay'}</button>
           <label className="btn-sec btn-file">

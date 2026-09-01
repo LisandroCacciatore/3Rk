@@ -198,6 +198,20 @@ export function CartaActionMenu({
       ? 'Habilidades de carta desactivadas (D-27)'
       : null
   const costeOrden = cartaAEsperanza(carta)
+
+  // Calcular magnitud escalada para mostrar en el menú
+  let magnitudTexto = ''
+  if (habilidad) {
+    const base = habilidad.magnitudBase ?? habilidad.magnitud ?? 0
+    if (habilidad.escalaConValor === 'multiplicar') {
+      const val = base * carta.valor
+      magnitudTexto = base !== val ? ` (${val})` : ''
+    } else if (habilidad.escalaConValor === 'sumar') {
+      const val = base + (carta.valor - 1)
+      magnitudTexto = base !== val ? ` (${val})` : ''
+    }
+  }
+
   return (
     <div className="carta-menu-overlay">
       <div className="carta-menu-backdrop" onClick={onCerrar} />
@@ -225,7 +239,7 @@ export function CartaActionMenu({
           onClick={onJugarHabilidad}
           title={motivoHabilidad || undefined}
         >
-          Jugar como Habilidad{habilidad ? `: ${habilidad.nombre}` : ''}
+          Jugar como Habilidad{habilidad ? `: ${habilidad.nombre}${magnitudTexto}` : ''}
         </button>
         {motivoHabilidad && <span className="acc-motivo carta-menu-motivo">{motivoHabilidad}</span>}
         <button className="btn-cancelar" onClick={onCerrar}>

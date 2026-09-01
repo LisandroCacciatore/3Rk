@@ -126,27 +126,28 @@ describe('US-163 — La habilidad es de la carta, no de la unidad', () => {
   })
 })
 
-describe('US-163 — Efectos propios de cada carta (magnitud fija)', () => {
+describe('US-163 — Efectos propios de cada carta (magnitud escala con valor)', () => {
   it('Fuego1 Chispa: 1 herida directa', () => {
     const nuevo = jugarHabilidad(base(cartaDe('Fuego1')))
     expect(buscarUnidad(nuevo, 'Objetivo').heridas).toBe(1)
   })
 
-  it('Fuego2 Látigo: 1 herida y retrocede 1 hex', () => {
-    const nuevo = jugarHabilidad(base(cartaDe('Fuego2')))
+  it('Fuego2 Látigo: 2 heridas (valor×base) y retrocede 1 hex', () => {
+    const estado = base(cartaDe('Fuego2'), { objetivoExtras: { maxVida: 5 } })
+    const nuevo = jugarHabilidad(estado)
     const objetivo = buscarUnidad(nuevo, 'Objetivo')
-    expect(objetivo.heridas).toBe(1)
+    expect(objetivo.heridas).toBe(2)
     expect(objetivo.pos).toEqual({ q: 2, r: 0 })
   })
 
-  it('Fuego3 Bomba: daña al objetivo y a los enemigos adyacentes a él', () => {
+  it('Fuego3 Bomba: daña al objetivo y a los enemigos adyacentes a él (valor×base)', () => {
     const estado = base(cartaDe('Fuego3'), {
       objetivoExtras: { maxVida: 5 },
     })
     estado.unidades.push(unidad('Vecino', 'B', 'Peon', { q: 2, r: 0 }, { maxVida: 5 }))
     const nuevo = jugarHabilidad(estado)
-    expect(buscarUnidad(nuevo, 'Objetivo').heridas).toBe(1)
-    expect(buscarUnidad(nuevo, 'Vecino').heridas).toBe(1)
+    expect(buscarUnidad(nuevo, 'Objetivo').heridas).toBe(3)
+    expect(buscarUnidad(nuevo, 'Vecino').heridas).toBe(3)
   })
 
   it('Agua1 Escarcha: el enemigo queda Stunned', () => {
@@ -154,12 +155,12 @@ describe('US-163 — Efectos propios de cada carta (magnitud fija)', () => {
     expect(buscarUnidad(nuevo, 'Objetivo').estados).toContain('Stunned')
   })
 
-  it('Agua2 Ola: cura 2 sin superar la vida máxima', () => {
+  it('Agua2 Ola: cura 3 (base+valor-1) sin superar la vida máxima', () => {
     const estado = base(cartaDe('Agua2'), {
       objetivoJugador: 'A', objetivoExtras: { maxVida: 5, heridas: 3 },
     })
     const nuevo = jugarHabilidad(estado)
-    expect(buscarUnidad(nuevo, 'Objetivo').heridas).toBe(1)
+    expect(buscarUnidad(nuevo, 'Objetivo').heridas).toBe(0)
   })
 
   it('Agua3 Escudo: otorga Muro defensivo a una Torre', () => {
@@ -174,10 +175,10 @@ describe('US-163 — Efectos propios de cada carta (magnitud fija)', () => {
     expect(buscarUnidad(nuevo, 'Objetivo').bonoPoolAtaque).toBe(1)
   })
 
-  it('Aire2 Brisa: +1 dado a la próxima tirada de defensa', () => {
+  it('Aire2 Brisa: +2 dados (base+valor-1) a la próxima tirada de defensa', () => {
     const estado = base(cartaDe('Aire2'), { objetivoJugador: 'A' })
     const nuevo = jugarHabilidad(estado)
-    expect(buscarUnidad(nuevo, 'Objetivo').bonoPoolDefensa).toBe(1)
+    expect(buscarUnidad(nuevo, 'Objetivo').bonoPoolDefensa).toBe(2)
   })
 
   it('Aire3 Corriente: recupera la carta previa del descarte', () => {
@@ -196,9 +197,9 @@ describe('US-163 — Efectos propios de cada carta (magnitud fija)', () => {
     expect(buscarUnidad(nuevo, 'Objetivo').foco).toHaveLength(1)
   })
 
-  it('Tierra2 Terremoto: empuja al enemigo 2 hexes', () => {
+  it('Tierra2 Terremoto: empuja al enemigo 3 hexes (base+valor-1)', () => {
     const nuevo = jugarHabilidad(base(cartaDe('Tierra2')))
-    expect(buscarUnidad(nuevo, 'Objetivo').pos).toEqual({ q: 3, r: 0 })
+    expect(buscarUnidad(nuevo, 'Objetivo').pos).toEqual({ q: 4, r: 0 })
   })
 
   it('Tierra3 Avalancha: el Guerrero aliado puede Mover gratis', () => {

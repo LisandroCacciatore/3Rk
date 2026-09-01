@@ -34,8 +34,18 @@ import {
   sonidoImpacto,
   sonidoCarta,
   sonidoFanfarria,
+  sonidoExplosion,
+  sonidoTecnica,
+  sonidoAmenazaRey,
   desbloquearAudio,
 } from './sound.js'
+import { tutorialCompletado, marcarTutorialCompletado } from '../data/onboarding.js'
+import { guardarPartida } from '../data/historial.js'
+import Onboarding from './Onboarding.jsx'
+import CelebracionMomientos from './CelebracionMomientos.jsx'
+import HistorialPanel from './HistorialPanel.jsx'
+import ChallengeShare from './ChallengeShare.jsx'
+import DescubrimientoPopup from './DescubrimientoPopup.jsx'
 
 const SEMILLA_DEFECTO = 'playtest-01'
 
@@ -94,6 +104,13 @@ export default function App() {
   // turno", para que el rival no vea la mano nueva. ON por defecto.
   const [manoAMano, setManoAMano] = useState(true)
   const [handoff, setHandoff] = useState(null)
+  // Onboarding (P0): guía de primera partida
+  const [mostrarOnboarding, setMostrarOnboarding] = useState(() => !tutorialCompletado())
+  const [onboardingPaso, setOnboardingPaso] = useState(0)
+  // Historial (P1): panel de historial de partidas
+  const [panelHistorial, setPanelHistorial] = useState(false)
+  // Descubrimiento (P2): popup de interacciones elementales
+  const [descubrimientoTecnica, setDescubrimientoTecnica] = useState(null)
   // Timer del pase automático de turno (0 PO / mano vacía) y del cierre del
   // cartel. Se limpian al despachar de nuevo o al terminar el turno a mano.
   const autoPasarRef = useRef(null)
@@ -228,6 +245,55 @@ export default function App() {
         return null
       })()
       if (intensidad) setScreenShake(intensidad)
+    }
+
+    // P0 — Sonidos de celebración (explosiones encadenadas, técnicas, amenaza al Rey).
+    for (const ev of nuevas) {
+      if (ev.tipo === 'ataque' && ev.detalle) {
+        const expAtq = (ev.detalle.dadosAtaque || []).filter(d => d.includes('+')).length
+        const expDef = (ev.detalle.dadosDefensa || []).filter(d => d.includes('+')).length
+        if (expAtq + expDef >= 3) sonidoExplosion()
+        else if (ev.tecnica) sonidoTecnica()
+      }
+      if (ev.tipo === 'herida') {
+        const u = nuevo.unidades.find(u => u.id === ev.unidadId)
+        if (u && u.arquetipo === 'Rey' && u.heridas < u.maxVida) sonidoAmenazaRey()
+      }
+    }
+
+    // P0 — Onboarding: avanzar pasos automáticamente.
+    if (mostrarOnboarding && onboardingPaso < 6) {
+      for (const ev of nuevas) {
+        if (ev.tipo === 'carta-jugada' && onboardingPaso === 0) { setOnboardingPaso(1); break }
+        if (ev.tipo === 'ataque' && onboardingPaso === 3) { setOnboardingPaso(4); break }
+        if (ev.tipo === 'herida' && onboardingPaso === 4) { setOnboardingPaso(5); break }
+      }
+      if (modo === 'atacar' && onboardingPaso === 1) setOnboardingPaso(2)
+      if (unidadSel && onboardingPaso === 0) setOnboardingPaso(1)
+    }
+
+    // P1 — Historial: guardar al terminar la partida.
+    if (nuevo.ganador && !estado.ganador) {
+      guardarPartida({
+        semilla: nuevo.semilla,
+        escenario: nuevo.escenario,
+        faccionA: nuevo.jugadores.A.faccion,
+        faccionB: nuevo.jugadores.B.faccion,
+        ganador: nuevo.ganador.ganador,
+        motivo: nuevo.ganador.motivo,
+        rondas: nuevo.ronda,
+        eliminacionesA: nuevo.unidades.filter(u => u.jugador === 'B').length,
+        eliminacionesB: nuevo.unidades.filter(u => u.jugador === 'A').length,
+        modoSolitario,
+      })
+    }
+
+    // P2 — Descubrimiento: detectar técnica usada por primera vez.
+    for (const ev of nuevas) {
+      if (ev.tipo === 'ataque' && ev.tecnica) {
+        setDescubrimientoTecnica(ev.tecnica)
+        break
+      }
     }
   }
 
@@ -519,20 +585,33 @@ export default function App() {
     if (finalizada) return
     setCombate(null)
     if (modo === 'habilidad' && habilidadSel) {
-      // Fase 1: elegir el ORIGEN (unidad aliada); Fase 2: elegir el objetivo
-      // que cumple el filtro de la carta dentro del alcance del origen.
-      if (!habilidadSel.origenId) {
-        if (origenesSet.has(u.id)) {
-          setHabilidadSel(prev => ({ ...prev, origenId: u.id }))
+      if (habilidadSel.directa) {
+        // Single-click: el objetivo se valida por el motor (rango/LoS/filtro).
+        // El origen se auto-selecciona en validarHabilidad.
+        if (objetivoHabSet.has(u.id)) {
+          despachar({
+            tipo: 'JUGAR_CARTA', jugador: activo, indiceCarta: habilidadSel.indiceCarta,
+            uso: 'habilidad', unidad: null, objetivo: u.id,
+          })
+          setHabilidadSel(null)
+          setCartaSel(null)
+          setModo('ninguno')
         }
-      } else if (objetivoHabSet.has(u.id)) {
-        despachar({
-          tipo: 'JUGAR_CARTA', jugador: activo, indiceCarta: habilidadSel.indiceCarta,
-          uso: 'habilidad', unidad: habilidadSel.origenId, objetivo: u.id,
-        })
-        setHabilidadSel(null)
-        setCartaSel(null)
-        setModo('ninguno')
+      } else {
+        // Two-click: flujo original origen → objetivo.
+        if (!habilidadSel.origenId) {
+          if (origenesSet.has(u.id)) {
+            setHabilidadSel(prev => ({ ...prev, origenId: u.id }))
+          }
+        } else if (objetivoHabSet.has(u.id)) {
+          despachar({
+            tipo: 'JUGAR_CARTA', jugador: activo, indiceCarta: habilidadSel.indiceCarta,
+            uso: 'habilidad', unidad: habilidadSel.origenId, objetivo: u.id,
+          })
+          setHabilidadSel(null)
+          setCartaSel(null)
+          setModo('ninguno')
+        }
       }
       return
     }
@@ -667,9 +746,13 @@ export default function App() {
 
   // D-27 (US-163): cambia el uso de la carta de Orden a Habilidad y entra en el
   // modo de selección de origen/objetivo (ver rawOnUnitClick).
+  // Si la habilidad tiene seleccionDirecta, se salta la selección de origen.
   const onJugarHabilidad = () => {
     if (cartaSel == null || !estado.reglas.habilitarHabilidadesCarta) return
-    setHabilidadSel({ indiceCarta: cartaSel, origenId: null })
+    const carta = jugadorActivo.mano[cartaSel]
+    const hab = carta?.habilidad
+    const directa = !!hab?.seleccionDirecta
+    setHabilidadSel({ indiceCarta: cartaSel, origenId: null, directa })
     setCartaSel(null)
     setModo('habilidad')
   }
@@ -828,6 +911,7 @@ export default function App() {
           onEsquematico={() => setTableroEsquematico(v => !v)}
           manoAMano={manoAMano}
           onManoAMano={() => setManoAMano(v => !v)}
+          onHistorial={() => { setPanelAjustes(false); setPanelHistorial(true) }}
         />
       )}
 
@@ -877,8 +961,16 @@ export default function App() {
       {finalizada && (
         <div className="banner-ganador">
           <strong>Gana {estado.ganador.ganador}</strong>: {estado.ganador.motivo}
+          <ChallengeShare estado={estado} />
           <button className="btn-nueva" onClick={nuevaPartida}>Nueva partida</button>
         </div>
+      )}
+
+      {mostrarOnboarding && !finalizada && (
+        <Onboarding
+          paso={onboardingPaso}
+          onCerrar={() => { setMostrarOnboarding(false); marcarTutorialCompletado() }}
+        />
       )}
 
       <main className="app-main">
@@ -980,17 +1072,25 @@ export default function App() {
       {modo === 'habilidad' && habilidadSel && !finalizada && (
         <div className="panel-flotante">
           <strong>
-            Habilidad (D-27): {cartaHabilidad?.habilidad?.nombre || cartaHabilidad?.elemento}{' '}
+            {cartaHabilidad?.habilidad?.nombre || cartaHabilidad?.elemento}{' '}
             {cartaHabilidad?.valor} ·{' '}
-            {habilidadSel.origenId ? 'elige un objetivo' : 'elige un origen'}
+            {habilidadSel.directa
+              ? 'toca un objetivo'
+              : habilidadSel.origenId
+                ? 'elige un objetivo'
+                : 'elige un origen'}
           </strong>
-          {habilidadSel.origenId ? (
+          {habilidadSel.directa ? (
             <span className="acc-motivo">
-              Origen: {habilidadSel.origenId} — pulsa la unidad marcada que cumple el filtro
+              Tocá la unidad {cartaHabilidad?.habilidad?.objetivo === 'aliado' ? 'aliada' : 'enemiga'} para usar {cartaHabilidad?.habilidad?.nombre}
+            </span>
+          ) : habilidadSel.origenId ? (
+            <span className="acc-motivo">
+              Origen: {habilidadSel.origenId} — pulsa un objetivo
             </span>
           ) : (
             <span className="acc-motivo">
-              Pulsa una unidad aliada como origen (cualquier unidad, sin restricción de rol)
+              Pulsa una unidad aliada como origen
             </span>
           )}
           <button
@@ -1083,6 +1183,13 @@ export default function App() {
       {combate && (
         <CombatResult detalle={combate} estado={estado} onCerrar={() => setCombate(null)} />
       )}
+
+      <HistorialPanel visible={panelHistorial} onCerrar={() => setPanelHistorial(false)} />
+
+      <DescubrimientoPopup
+        tecnica={descubrimientoTecnica}
+        onCerrar={() => setDescubrimientoTecnica(null)}
+      />
     </div>
   )
 }

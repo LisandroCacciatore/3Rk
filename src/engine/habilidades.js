@@ -51,11 +51,6 @@ function validarHabilidad(estado, intencion) {
     return { ok: false, motivo: `${carta.elemento}${carta.valor} no tiene habilidad` }
   }
 
-  const origen = estado.unidades.find(u => u.id === origenId)
-  if (!origen || origen.jugador !== jugador) {
-    return { ok: false, motivo: 'origen inválido o no es una unidad tuya' }
-  }
-
   const objetivo = estado.unidades.find(u => u.id === objetivoId)
   if (!objetivo) {
     return { ok: false, motivo: 'objetivo no encontrado' }
@@ -78,6 +73,26 @@ function validarHabilidad(estado, intencion) {
     return { ok: false, motivo: 'el objetivo no cumple el filtro de la carta' }
   }
 
+  // Auto-origen para single-click (seleccionDirecta): encontrar la unidad aliada
+  // más cercana que tenga LoS + rango al objetivo.
+  let origen
+  if (origenId) {
+    origen = estado.unidades.find(u => u.id === origenId)
+    if (!origen || origen.jugador !== jugador) {
+      return { ok: false, motivo: 'origen inválido o no es una unidad tuya' }
+    }
+  } else {
+    const candidatas = estado.unidades.filter(u =>
+      u.jugador === jugador && estaEnRangoYVista(estado, u, objetivo).ok
+    )
+    if (candidatas.length === 0) {
+      return { ok: false, motivo: 'ninguna unidad aliada tiene rango al objetivo' }
+    }
+    origen = candidatas.sort((a, b) =>
+      distancia(a.pos, objetivo.pos) - distancia(b.pos, objetivo.pos)
+    )[0]
+  }
+
   const rango = estaEnRangoYVista(estado, origen, objetivo)
   if (!rango.ok) {
     return { ok: false, motivo: `objetivo rechazado: ${rango.motivo}` }
@@ -91,7 +106,8 @@ export function aplicarEfecto(estado, validacion) {
   if (!validacion.ok) return { ok: false, motivo: validacion.motivo }
 
   const { carta, origen, objetivo, jugador, habilidad } = validacion
-  const magnitud = habilidad.magnitud || 0
+  const cartaValor = carta?.valor || 1
+  const magnitud = calcularMagnitud(habilidad, cartaValor)
 
   switch (habilidad.efecto) {
     case 'herida':
@@ -210,4 +226,14 @@ function aplicarDisipar(unidad) {
     return
   }
   unidad.disipadoDefensa = (unidad.disipadoDefensa || 0) + 1
+}
+
+// Calcula la magnitud efectiva de una habilidad según el valor de la carta.
+// 'multiplicar': base × carta.valor | 'sumar': base + (valor-1) | null: fijo.
+function calcularMagnitud(hab, valor) {
+  const base = hab.magnitudBase ?? hab.magnitud ?? 0
+  if (!hab.escalaConValor) return base
+  if (hab.escalaConValor === 'multiplicar') return base * valor
+  if (hab.escalaConValor === 'sumar') return base + (valor - 1)
+  return base
 }
